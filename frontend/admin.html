@@ -249,8 +249,11 @@
         try {
           var r = await fetchApi(API_BASE + '/price-list');
           if (!r.ok) throw new Error(r.statusText);
-          var list = await r.json();
-          if (!list.length) {
+          var text = await r.text();
+          if (text.trim().charAt(0) === '<') throw new Error('Сервер вернул страницу вместо данных. Проверьте nginx: location /price-list должен проксироваться на бэкенд.');
+          var list;
+          try { list = JSON.parse(text); } catch (parseErr) { throw new Error('Ответ не JSON. Проверьте проксирование /price-list на бэкенд.'); }
+          if (!Array.isArray(list) || !list.length) {
             priceListEl.innerHTML = '<p class="text-muted">Прейскурант пуст.</p>';
             return;
           }
@@ -282,11 +285,14 @@
         if (priceListMessage) priceListMessage.textContent = 'Сохранение…';
         try {
           var r = await fetchApi(API_BASE + '/price-list', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(items) });
+          var respText = await r.text();
           if (!r.ok) {
-            var err = await r.json().catch(function() { return {}; });
+            var err = {};
+            if (respText.trim().charAt(0) === '{') try { err = JSON.parse(respText); } catch (z) {}
             if (r.status === 403) throw new Error('Только для администратора');
-            throw new Error(err.detail || r.statusText);
+            throw new Error((err.detail || r.statusText) + (respText.trim().charAt(0) === '<' ? ' (сервер вернул HTML — проверьте nginx: /price-list)' : ''));
           }
+          if (respText.trim().charAt(0) === '<') throw new Error('Сервер вернул HTML вместо JSON. Добавьте в nginx: location /price-list { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; proxy_set_header Authorization $http_authorization; }');
           if (priceListMessage) priceListMessage.textContent = 'Сохранено.';
           setTimeout(function() { if (priceListMessage) priceListMessage.textContent = ''; }, 3000);
           loadPriceList();
