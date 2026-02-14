@@ -109,6 +109,16 @@ body {
   border-color: var(--accent);
 }
 
+.header__user {
+  margin-left: auto;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.header__user a {
+  color: var(--accent);
+}
+
 /* Cards */
 .main {
   flex: 1;

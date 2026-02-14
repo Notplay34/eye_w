@@ -85,7 +85,6 @@
   const btnPrint = el('btnPrint');
   const orderIdDisplay = el('orderIdDisplay');
   const currentTime = el('currentTime');
-  const operatorName = el('operatorName');
 
   function num(val) {
     const n = parseFloat(val);
@@ -192,7 +191,8 @@
   }
 
   function buildOrderPayload() {
-    const employeeId = parseInt(localStorage.getItem('pavilion_operator_id') || '', 10);
+    var user = window.getUser();
+    var employeeId = user && user.id ? user.id : null;
     return {
       client_fio: (inputs.clientFio && inputs.clientFio.value.trim()) || null,
       client_passport: (inputs.clientPassport && inputs.clientPassport.value.trim()) || null,
@@ -219,7 +219,7 @@
       extra_amount: getExtraAmount(),
       plate_amount: getPlateAmount(),
       summa_dkp: inputs.summaDkp ? num(inputs.summaDkp.value) : 0,
-      employee_id: Number.isInteger(employeeId) ? employeeId : null
+      employee_id: employeeId || null
     };
   }
 
@@ -288,53 +288,6 @@
     });
   }
 
-  const operatorSelect = el('operatorSelect');
-
-  async function loadEmployees() {
-    try {
-      const res = await fetchApi(API_BASE_URL + '/employees');
-      if (!res.ok) return;
-      const list = await res.json();
-      if (!operatorSelect) return;
-      list.forEach(function (emp) {
-        const opt = document.createElement('option');
-        opt.value = emp.id;
-        opt.textContent = emp.name;
-        operatorSelect.appendChild(opt);
-      });
-      const savedId = localStorage.getItem('pavilion_operator_id');
-      if (savedId) {
-        operatorSelect.value = savedId;
-        const sel = operatorSelect.options[operatorSelect.selectedIndex];
-        if (operatorName) operatorName.textContent = sel ? sel.textContent : '—';
-      }
-    } catch (_) {}
-  }
-
-  function initOperator() {
-    const name = localStorage.getItem('pavilion_operator_name') || '';
-    if (operatorName) operatorName.textContent = name || '—';
-    loadEmployees();
-    if (operatorSelect) {
-      operatorSelect.addEventListener('change', function () {
-        const id = operatorSelect.value;
-        if (id) localStorage.setItem('pavilion_operator_id', id);
-        else localStorage.removeItem('pavilion_operator_id');
-        const sel = operatorSelect.options[operatorSelect.selectedIndex];
-        if (operatorName) operatorName.textContent = sel ? sel.textContent : '—';
-      });
-    }
-  }
-
-  function setOperator() {
-    const name = prompt('Имя оператора:', localStorage.getItem('pavilion_operator_name') || '');
-    if (name != null) {
-      const trimmed = String(name).trim();
-      localStorage.setItem('pavilion_operator_name', trimmed);
-      if (operatorName) operatorName.textContent = trimmed || '—';
-    }
-  }
-
   function updateTime() {
     if (currentTime) {
       currentTime.textContent = new Date().toLocaleString('ru-RU', {
@@ -351,14 +304,11 @@
     bindInputs();
     togglePlateAmount();
     syncFromMainForm();
-    initOperator();
     updateTime();
     setInterval(updateTime, 60000);
 
     if (btnAcceptCash) btnAcceptCash.addEventListener('click', acceptCash);
     if (btnPrint) btnPrint.addEventListener('click', doPrint);
-    const btnSetOperator = el('btnSetOperator');
-    if (btnSetOperator) btnSetOperator.addEventListener('click', setOperator);
   }
 
   init();

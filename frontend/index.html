@@ -14,16 +14,7 @@
   <div class="app">
     <header class="header">
       <h1 class="header__title">Оформление документов</h1>
-      <p class="header__subtitle">Павильон 1 · МРЭО</p>
-      <div class="header__operator">
-        <span class="header__operator-label">Оператор:</span>
-        <select class="header__operator-select" id="operatorSelect" title="Выберите оператора">
-          <option value="">—</option>
-        </select>
-        <span class="header__operator-name" id="operatorName">—</span>
-        <button type="button" class="header__operator-btn" id="btnSetOperator" title="Указать имя вручную">✎</button>
-      </div>
-      <div class="header__user" id="headerUser" style="margin-left:1rem;font-size:0.85rem;">
+      <div class="header__user" id="headerUser">
         <span id="currentUserName"></span>
         <a href="login.html" id="btnLogout" style="margin-left:0.5rem;">Выйти</a>
       </div>
@@ -231,8 +222,6 @@
     <footer class="footer">
       <span id="orderIdDisplay"></span>
       <span class="footer__time" id="currentTime"></span>
-      <a href="admin.html" class="footer__admin" id="footerAdmin" title="Просмотр данных БД" style="display:none;">Админка</a>
-      <a href="users.html" class="footer__admin" id="footerUsers" title="Управление аккаунтами" style="display:none;">Управление аккаунтами</a>
     </footer>
   </div>
 
@@ -242,13 +231,19 @@
       if (!window.requireAuth()) return;
       var user = window.getUser();
       if (user) {
-        var roleLabel = { ROLE_OPERATOR: 'Оператор', ROLE_MANAGER: 'Управляющий', ROLE_ADMIN: 'Директор' }[user.role] || user.role;
         var el = document.getElementById('currentUserName');
-        if (el) el.textContent = user.name + ' (' + roleLabel + ')';
-        var adminLink = document.getElementById('footerAdmin');
-        if (adminLink && (user.role === 'ROLE_MANAGER' || user.role === 'ROLE_ADMIN')) adminLink.style.display = '';
-        var usersLink = document.getElementById('footerUsers');
-        if (usersLink && user.role === 'ROLE_ADMIN') usersLink.style.display = '';
+        if (el) {
+          if (user.role === 'ROLE_ADMIN') {
+            var a = document.createElement('a');
+            a.href = 'account.html';
+            a.textContent = user.name;
+            a.style.color = 'inherit';
+            a.style.textDecoration = 'none';
+            el.appendChild(a);
+          } else {
+            el.textContent = user.name;
+          }
+        }
       }
       document.getElementById('btnLogout').addEventListener('click', function (e) {
         e.preventDefault();

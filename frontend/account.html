@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Меню</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .account { display: flex; min-height: 100vh; }
+    .account__sidebar { width: 220px; min-width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 1.5rem 0; }
+    .account__sidebar a { display: block; padding: 0.6rem 1.25rem; color: var(--text); text-decoration: none; }
+    .account__sidebar a:hover { background: var(--surface2); color: var(--accent); }
+    .account__sidebar .active { font-weight: 600; color: var(--accent); }
+    .account__content { flex: 1; padding: 2rem; }
+    .account__content h1 { font-family: var(--font-serif); margin: 0 0 0.5rem; }
+    .account__content p { color: var(--text-muted); margin: 0; }
+  </style>
+</head>
+<body>
+  <div class="account">
+    <nav class="account__sidebar">
+      <a href="index.html">Оформление заказов</a>
+      <a href="admin.html" id="linkAdmin" style="display:none;">Админка</a>
+      <a href="users.html" id="linkUsers" style="display:none;">Управление аккаунтами</a>
+      <a href="login.html" id="linkLogout" style="margin-top:1rem; color: var(--text-muted);">Выйти</a>
+    </nav>
+    <main class="account__content">
+      <h1>Меню</h1>
+      <p id="userInfo">Выберите раздел слева.</p>
+    </main>
+  </div>
+  <script src="auth.js"></script>
+  <script>
+    (function () {
+      if (!window.requireAuth()) return;
+      var user = window.getUser();
+      if (!user) return;
+      if (user.role === 'ROLE_MANAGER' || user.role === 'ROLE_ADMIN') {
+        document.getElementById('linkAdmin').style.display = 'block';
+      }
+      if (user.role === 'ROLE_ADMIN') {
+        document.getElementById('linkUsers').style.display = 'block';
+      }
+      document.getElementById('linkLogout').addEventListener('click', function (e) {
+        e.preventDefault();
+        window.clearAuth();
+        window.location.href = 'login.html';
+      });
+    })();
+  </script>
+</body>
+</html>

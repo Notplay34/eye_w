@@ -31,10 +31,7 @@
 <body>
   <div class="admin">
     <h1>Админка</h1>
-    <p class="admin__link">
-      <a href="index.html">← Форма оператора</a>
-      <span id="adminUsersLink" style="margin-left:1rem; display:none;"><a href="users.html">Управление аккаунтами</a></span>
-    </p>
+    <p class="admin__link"><a href="account.html">← В меню</a></p>
     <button type="button" class="btn btn-refresh" id="btnRefresh">Обновить данные</button>
 
     <section id="sectionToday">
@@ -57,8 +54,6 @@
   <script>
     (function() {
       if (!window.requireAuth()) return;
-      var user = window.getUser();
-      if (user && user.role === 'ROLE_ADMIN') document.getElementById('adminUsersLink').style.display = 'inline';
       var API_BASE = window.API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
       var fetchApi = window.fetchWithAuth || fetch;
       var todayEl = document.getElementById('todayContent');
