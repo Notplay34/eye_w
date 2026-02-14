@@ -18,3 +18,10 @@ class EmployeeCreate(BaseModel):
     name: str
     role: EmployeeRole
     telegram_id: int | None = None
+
+
+class EmployeeUpdate(BaseModel):
+    name: str | None = None
+    role: EmployeeRole | None = None
+    telegram_id: int | None = None
+    is_active: bool | None = None

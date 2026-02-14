@@ -54,6 +54,27 @@ DEVELOPMENT_LOG.md используется для:
 
 ---
 
+### [2025-02-14] — PATCH /employees, docker-compose, раздел «Как тестировать»
+
+**Тип изменения:** Feature, Improvement
+
+**Описание:**  
+Реализован PATCH /employees/{id}: обновление сотрудника (name, role, telegram_id, is_active); все поля опциональны. Схема EmployeeUpdate в schemas/employee.py. В README добавлен раздел «Как тестировать» (PostgreSQL локально или через docker-compose, запуск backend и frontend, проверка формы и API). В корне добавлен docker-compose.yml для поднятия PostgreSQL (образ postgres:16-alpine, БД eye_w, пользователь eye_user) для удобного локального теста. В таблицу эндпоинтов README добавлены POST и PATCH для employees.
+
+**Причина:**  
+Оставшаяся по плану задача (PATCH /employees); запрос пользователя подготовить тестирование.
+
+**Затронутые файлы:**  
+- backend/app/schemas/employee.py (EmployeeUpdate)
+- backend/app/api/employees.py (PATCH /employees/{id})
+- README.md (эндпоинты, раздел «Как тестировать»)
+- docker-compose.yml (новый)
+
+**Связь с PROJECT_CONTEXT.md:**  
+Без изменений архитектуры.
+
+---
+
 ### [2025-02-14] — Этапы 6 и 7: Telegram-бот павильона 2 и бот владельца
 
 **Тип изменения:** Feature

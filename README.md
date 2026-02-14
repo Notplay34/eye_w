@@ -73,6 +73,8 @@
 | GET | /orders/{id} | Заказ по id |
 | GET | /orders/{id}/documents/{template} | Скачать сгенерированный docx |
 | GET | /employees | Список сотрудников |
+| POST | /employees | Создание сотрудника |
+| PATCH | /employees/{id} | Обновление сотрудника (имя, роль, telegram_id, is_active) |
 | GET | /analytics/today | Сводка за день |
 | GET | /analytics/month | Сводка за месяц |
 | GET | /analytics/employees | Учёт по сотрудникам |
@@ -114,6 +116,34 @@ python main.py
 ```
 
 В БД у владельца должен быть заполнен `telegram_id` (узнать свой id можно через @userinfobot).
+
+---
+
+## Как тестировать
+
+1. **База данных.** Должен быть запущен PostgreSQL с БД `eye_w`.
+   - Локально: создать БД и пользователя, в `backend/.env` указать `DATABASE_URL`.
+   - Через Docker (если установлен): в корне проекта выполнить `docker compose up -d` — поднимется PostgreSQL (порт 5432, пользователь `eye_user`, пароль `eye_pass`, БД `eye_w`). В `backend/.env` задать:
+     ```
+     DATABASE_URL=postgresql+asyncpg://eye_user:eye_pass@localhost:5432/eye_w
+     ```
+
+2. **Backend:** из корня проекта:
+   ```bash
+   .venv\Scripts\activate
+   cd backend
+   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+   Проверка: http://localhost:8000/docs и http://localhost:8000/health
+
+3. **Frontend:** в другом терминале:
+   ```bash
+   cd frontend
+   python -m http.server 8080
+   ```
+   Открыть http://localhost:8080 — форма оператора. Создать через API или форму заказ, принять оплату, проверить аналитику и скачивание документов.
+
+4. **Сотрудники:** через Swagger (POST /employees) создать сотрудника; PATCH /employees/{id} — обновить (например, указать telegram_id для ботов).
 
 ---
 
