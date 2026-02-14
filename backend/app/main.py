@@ -11,6 +11,7 @@ from app.api.orders import router as orders_router
 from app.api.employees import router as employees_router
 from app.api.documents import router as documents_router
 from app.api.analytics import router as analytics_router
+from app.api.auth import router as auth_router
 
 setup_logging()
 logger = get_logger(__name__)
@@ -48,6 +49,7 @@ app.add_middleware(
 app.include_router(orders_router)
 app.include_router(documents_router)
 app.include_router(analytics_router)
+app.include_router(auth_router)
 app.include_router(employees_router)
 
 

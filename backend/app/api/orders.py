@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +13,7 @@ from app.schemas.order import OrderCreate, OrderResponse
 from app.schemas.payment import PayOrderResponse
 from app.services.order_service import create_order
 from app.services.order_status import can_transition
+from app.services.telegram_notify import notify_plate_operators_new_order
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -85,6 +86,8 @@ async def pay_order(
     db.add(order)
     await db.flush()
     logger.info("Оплата принята по заказу id=%s", order.id)
+    if order.need_plate:
+        await notify_plate_operators_new_order(db, order.id, order.public_id, order.total_amount)
     return PayOrderResponse(
         order_id=order.id,
         public_id=order.public_id,
@@ -143,12 +146,33 @@ class OrderStatusUpdate(BaseModel):
     status: OrderStatus
 
 
+async def _is_plate_operator(db: AsyncSession, telegram_id: int) -> bool:
+    from app.models import Employee
+    from app.models.employee import EmployeeRole
+    r = await db.execute(
+        select(Employee.id).where(
+            Employee.telegram_id == telegram_id,
+            Employee.role == EmployeeRole.ROLE_PLATE_OPERATOR,
+            Employee.is_active == True,
+        )
+    )
+    return r.scalar_one_or_none() is not None
+
+
 @router.patch("/{order_id}/status")
 async def update_order_status(
     order_id: int,
     body: OrderStatusUpdate,
     db: AsyncSession = Depends(get_db),
+    x_telegram_user_id: str | None = Header(None, alias="X-Telegram-User-Id"),
 ):
+    if x_telegram_user_id is not None:
+        try:
+            tid = int(x_telegram_user_id)
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Неверный X-Telegram-User-Id")
+        if not await _is_plate_operator(db, tid):
+            raise HTTPException(status_code=403, detail="Доступ только для оператора павильона 2")
     new_status = body.status
     order = await _get_order(db, order_id)
     if not order:

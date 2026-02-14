@@ -79,10 +79,46 @@
 
 ---
 
+## Telegram-боты
+
+### Бот павильона 2 (изготовление номеров)
+
+- При оплате заказа с номером операторы павильона 2 получают уведомление в Telegram (кто в `employees` с ролью `ROLE_PLATE_OPERATOR` и заполненным `telegram_id`).
+- Отдельный процесс обрабатывает нажатия кнопок «Изготовлен», «Доплата получена», «Проблема» и вызывает API для смены статуса заказа.
+
+Запуск:
+
+```bash
+cd bot_plate
+pip install -r requirements.txt
+set TELEGRAM_BOT_TOKEN_PLATE=токен_бота
+set API_BASE_URL=http://localhost:8000
+python main.py
+```
+
+В backend задать переменную `TELEGRAM_BOT_TOKEN_PLATE` (тот же токен) для отправки уведомлений при оплате.
+
+### Бот владельца (аналитика)
+
+- Команды: `/today`, `/month`, `/employees`.
+- Доступ только для пользователей, у которых `telegram_id` записан в `employees` с ролью `ROLE_ADMIN`.
+
+Запуск:
+
+```bash
+cd bot_owner
+pip install -r requirements.txt
+set TELEGRAM_BOT_TOKEN_OWNER=токен_бота_владельца
+set API_BASE_URL=http://localhost:8000
+python main.py
+```
+
+В БД у владельца должен быть заполнен `telegram_id` (узнать свой id можно через @userinfobot).
+
+---
+
 ## Дальнейшая разработка
 
-- Telegram-бот павильона 2 (уведомления, смена статусов)
-- Telegram-бот владельца (/today, /month, /employees)
-- При необходимости: авторизация, миграции БД (Alembic)
+- При необходимости: авторизация в веб-интерфейсе, миграции БД (Alembic)
 
 См. **DEVELOPMENT_PLAN.md** и **DEVELOPMENT_LOG.md**.

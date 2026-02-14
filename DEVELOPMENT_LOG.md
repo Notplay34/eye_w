@@ -54,6 +54,32 @@ DEVELOPMENT_LOG.md используется для:
 
 ---
 
+### [2025-02-14] — Этапы 6 и 7: Telegram-бот павильона 2 и бот владельца
+
+**Тип изменения:** Feature
+
+**Описание:**  
+Реализованы этапы 6 и 7. **Бот павильона 2 (bot_plate/):** при оплате заказа с need_plate backend отправляет уведомление в Telegram (сервис telegram_notify.py, переменная TELEGRAM_BOT_TOKEN_PLATE, получатели — employees с role=ROLE_PLATE_OPERATOR и telegram_id). Сообщение с кнопками «Изготовлен», «Доплата получена», «Проблема». Отдельный процесс (bot_plate/main.py) обрабатывает callback, вызывает PATCH /orders/{id}/status с заголовком X-Telegram-User-Id. В API при наличии заголовка проверяется, что telegram_id принадлежит оператору павильона 2. **Бот владельца (bot_owner/):** команды /today, /month, /employees; запросы к /analytics/today, /analytics/month, /analytics/employees. Доступ только для пользователей с role=ROLE_ADMIN (endpoint GET /auth/check-admin?telegram_id=). Добавлены .env.example для ботов, обновлён README.
+
+**Причина:**  
+План разработки: боты павильона 2 и владельца (PROJECT_CONTEXT, разделы 11, 4.3).
+
+**Затронутые файлы:**  
+- backend/app/services/telegram_notify.py (новый)
+- backend/app/api/orders.py (вызов уведомления, проверка X-Telegram-User-Id при PATCH)
+- backend/app/api/auth.py (новый, check-admin)
+- backend/app/main.py
+- backend/requirements.txt (httpx)
+- backend/.env.example
+- bot_plate/ (main.py, config.py, requirements.txt, .env.example)
+- bot_owner/ (main.py, config.py, requirements.txt, .env.example)
+- README.md
+
+**Связь с PROJECT_CONTEXT.md:**  
+Разделы 4.3, 10, 11.
+
+---
+
 ### [2025-02-14] — Этапы 8 и 9: аналитика API, логирование, обработка ошибок, README
 
 **Тип изменения:** Feature
