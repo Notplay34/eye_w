@@ -41,7 +41,6 @@
     dkpDate: el('dkpDate'),
     summaDkp: el('summaDkp'),
     dkpNumber: el('dkpNumber'),
-    dkpPullFromSeller: el('dkpPullFromSeller'),
     dkpSummary: el('dkpSummary'),
     stateDuty: el('stateDuty'),
     needPlate: el('needPlate'),
@@ -151,11 +150,11 @@
     if (inputs.summaDkp && num(inputs.summaDkp.value) > 0) dkpParts.push(formatMoney(num(inputs.summaDkp.value)));
     if (inputs.dkpNumber && inputs.dkpNumber.value.trim()) dkpParts.push('№ ' + inputs.dkpNumber.value.trim());
     var dkpStr = dkpParts.length ? dkpParts.join(', ') : '—';
-    var pullDkp = inputs.dkpPullFromSeller && inputs.dkpPullFromSeller.checked;
+    var pullDkp = inputs.hasSeller && inputs.hasSeller.checked && dkpStr !== '—';
     if (inputs.dkpSummary) {
       inputs.dkpSummary.readOnly = !!pullDkp;
       inputs.dkpSummary.classList.toggle('field__input--readonly', !!pullDkp);
-      if (pullDkp) inputs.dkpSummary.value = dkpStr !== '—' ? dkpStr : '';
+      if (pullDkp) inputs.dkpSummary.value = dkpStr;
     }
     if (preview.previewDkp) preview.previewDkp.textContent = pullDkp ? dkpStr : (inputs.dkpSummary && inputs.dkpSummary.value.trim()) || '—';
     var docLabels = selectedDocuments.length ? selectedDocuments.map(function (d) { return d.label || d.template; }).join(', ') : '—';
@@ -229,16 +228,16 @@
       srts: (inputs.srts && inputs.srts.value.trim()) || null,
       plate_number: (inputs.plateNumber && inputs.plateNumber.value.trim()) || null,
       pts: (inputs.pts && inputs.pts.value.trim()) || null,
-      dkp_date: (inputs.dkpPullFromSeller && inputs.dkpPullFromSeller.checked && inputs.dkpDate && inputs.dkpDate.value.trim()) ? inputs.dkpDate.value.trim() : null,
-      dkp_number: (inputs.dkpPullFromSeller && inputs.dkpPullFromSeller.checked && inputs.dkpNumber && inputs.dkpNumber.value.trim()) ? inputs.dkpNumber.value.trim() : null,
-      dkp_summary: (inputs.dkpPullFromSeller && !inputs.dkpPullFromSeller.checked && inputs.dkpSummary && inputs.dkpSummary.value.trim()) ? inputs.dkpSummary.value.trim() : null,
+      dkp_date: (inputs.hasSeller && inputs.hasSeller.checked && inputs.dkpDate && inputs.dkpDate.value.trim()) ? inputs.dkpDate.value.trim() : null,
+      dkp_number: (inputs.hasSeller && inputs.hasSeller.checked && inputs.dkpNumber && inputs.dkpNumber.value.trim()) ? inputs.dkpNumber.value.trim() : null,
+      dkp_summary: (!inputs.hasSeller || !inputs.hasSeller.checked) && inputs.dkpSummary && inputs.dkpSummary.value.trim() ? inputs.dkpSummary.value.trim() : null,
       service_type: selectedDocuments[0] ? selectedDocuments[0].template : null,
       need_plate: needPlate,
       plate_quantity: plateQuantity,
       state_duty: getStateDuty(),
       extra_amount: 0,
       plate_amount: 0,
-      summa_dkp: (inputs.dkpPullFromSeller && inputs.dkpPullFromSeller.checked && inputs.summaDkp) ? num(inputs.summaDkp.value) : 0,
+      summa_dkp: (inputs.hasSeller && inputs.hasSeller.checked && inputs.summaDkp) ? num(inputs.summaDkp.value) : 0,
       employee_id: employeeId || null,
       documents: selectedDocuments.map(function (d) {
         return { template: d.template, price: num(d.price), label: d.label || d.template };
