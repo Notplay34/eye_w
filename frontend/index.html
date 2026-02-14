@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Павильон 1 — Оформление заказов</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="header__title">Оформление документов</h1>
+      <p class="header__subtitle">Павильон 1 · МРЭО</p>
+      <div class="header__operator">
+        <span class="header__operator-label">Оператор:</span>
+        <span class="header__operator-name" id="operatorName">—</span>
+        <button type="button" class="header__operator-btn" id="btnSetOperator" title="Указать имя">✎</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Основная форма: один блок ввода — остальное подставляется -->
+      <section class="card card--primary" id="mainForm">
+        <h2 class="card__title">Данные заказа</h2>
+
+        <fieldset class="form-section">
+          <legend class="form-section__title">Покупатель / клиент</legend>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field__label" for="clientFio">ФИО</label>
+              <input type="text" id="clientFio" class="field__input" placeholder="Иванов Иван Иванович" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="clientPassport">Паспорт</label>
+              <input type="text" id="clientPassport" class="field__input" placeholder="серия номер" autocomplete="off">
+            </div>
+            <div class="field field--full">
+              <label class="field__label" for="clientAddress">Адрес</label>
+              <input type="text" id="clientAddress" class="field__input" placeholder="адрес регистрации" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="clientPhone">Телефон</label>
+              <input type="tel" id="clientPhone" class="field__input" placeholder="+7 (___) ___-__-__" autocomplete="off">
+            </div>
+            <div class="field field--full">
+              <label class="field__label" for="clientComment">Комментарий</label>
+              <input type="text" id="clientComment" class="field__input" placeholder="Необязательно" autocomplete="off">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+          <legend class="form-section__title">Продавец (для ДКП)</legend>
+          <div class="form-grid">
+            <div class="field">
+              <label class="field__label" for="sellerFio">ФИО продавец</label>
+              <input type="text" id="sellerFio" class="field__input" placeholder="ФИО продавца" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="sellerPassport">Паспорт продавец</label>
+              <input type="text" id="sellerPassport" class="field__input" placeholder="серия номер" autocomplete="off">
+            </div>
+            <div class="field field--full">
+              <label class="field__label" for="sellerAddress">Адрес продавец</label>
+              <input type="text" id="sellerAddress" class="field__input" placeholder="адрес" autocomplete="off">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+          <legend class="form-section__title">Транспортное средство</legend>
+          <div class="form-grid form-grid--wide">
+            <div class="field">
+              <label class="field__label" for="vin">VIN</label>
+              <input type="text" id="vin" class="field__input" placeholder="17 символов" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="brandModel">Марка, модель</label>
+              <input type="text" id="brandModel" class="field__input" placeholder="напр. Toyota Camry" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="vehicleType">Тип ТС</label>
+              <input type="text" id="vehicleType" class="field__input" placeholder="легковой, грузовой…" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="year">Год выпуска</label>
+              <input type="text" id="year" class="field__input" placeholder="год" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="engine">Двигатель</label>
+              <input type="text" id="engine" class="field__input" placeholder="модель, №" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="chassis">№ шасси (рамы)</label>
+              <input type="text" id="chassis" class="field__input" placeholder="—" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="body">№ кузова</label>
+              <input type="text" id="body" class="field__input" placeholder="—" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="color">Цвет</label>
+              <input type="text" id="color" class="field__input" placeholder="цвет" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="srts">СРТС</label>
+              <input type="text" id="srts" class="field__input" placeholder="свидетельство" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="plateNumber">Гос. номер</label>
+              <input type="text" id="plateNumber" class="field__input" placeholder="А123БВ77" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="pts">ПТС</label>
+              <input type="text" id="pts" class="field__input" placeholder="№ ПТС" autocomplete="off">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+          <legend class="form-section__title">Услуга и оплата</legend>
+          <div class="form-row">
+            <div class="field">
+              <label class="field__label" for="serviceType">Тип услуги</label>
+              <select id="serviceType" class="field__select">
+                <option value="">Выберите услугу</option>
+                <option value="mreo">МРЭО (постановка/снятие)</option>
+                <option value="dkp">ДКП</option>
+                <option value="dkp_dar">ДКП дарение</option>
+                <option value="dkp_pieces">ДКП запчасти</option>
+                <option value="doverennost">Доверенность</option>
+                <option value="zaiavlenie">Заявление</option>
+                <option value="akt_pp">Акт приёма-передачи</option>
+                <option value="prokuratura">Прокуратура</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field__label" for="needPlate">Номерной знак</label>
+              <select id="needPlate" class="field__select">
+                <option value="no">Не нужен</option>
+                <option value="yes">Изготовить номер</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row amounts">
+            <div class="field">
+              <label class="field__label" for="stateDuty">Госпошлина, ₽</label>
+              <input type="number" id="stateDuty" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
+            </div>
+            <div class="field">
+              <label class="field__label" for="extraAmount">Доп. услуги, ₽</label>
+              <input type="number" id="extraAmount" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
+            </div>
+            <div class="field">
+              <label class="field__label" for="plateAmount">Номер (если есть), ₽</label>
+              <input type="number" id="plateAmount" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
+            </div>
+            <div class="field">
+              <label class="field__label" for="summaDkp">Сумма ДКП, ₽</label>
+              <input type="number" id="summaDkp" class="field__input field__input--number" min="0" step="1" value="0" placeholder="стоимость по договору">
+            </div>
+          </div>
+        </fieldset>
+      </section>
+
+      <!-- Автозаполняемый блок: итоги и действия -->
+      <section class="card card--summary" id="summaryCard">
+        <h2 class="card__title">Итого и оплата</h2>
+        <div class="summary">
+          <div class="summary__row">
+            <span class="summary__label">Госпошлина</span>
+            <span class="summary__value" id="sumStateDuty">0 ₽</span>
+          </div>
+          <div class="summary__row">
+            <span class="summary__label">Доход павильона</span>
+            <span class="summary__value summary__value--income" id="sumIncome">0 ₽</span>
+          </div>
+          <div class="summary__row summary__row--total">
+            <span class="summary__label">К оплате</span>
+            <span class="summary__value summary__value--total" id="sumTotal">0 ₽</span>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn btn--primary" id="btnAcceptCash" disabled>
+            Принять наличные
+          </button>
+          <button type="button" class="btn btn--secondary" id="btnPrint" disabled>
+            Печать документов
+          </button>
+        </div>
+        <p class="summary__hint">Сумма считается автоматически из полей выше</p>
+      </section>
+
+      <!-- Мини-сводка для печати (заполняется из основной формы) -->
+      <section class="card card--preview" id="previewCard">
+        <h2 class="card__title">Сводка для документов</h2>
+        <div class="preview" id="documentPreview">
+          <p class="preview__line"><strong>ФИО:</strong> <span id="previewFio">—</span></p>
+          <p class="preview__line"><strong>Паспорт:</strong> <span id="previewPassport">—</span></p>
+          <p class="preview__line"><strong>Адрес:</strong> <span id="previewAddress">—</span></p>
+          <p class="preview__line"><strong>Телефон:</strong> <span id="previewPhone">—</span></p>
+          <p class="preview__line"><strong>Продавец:</strong> <span id="previewSeller">—</span></p>
+          <p class="preview__line"><strong>VIN / Марка:</strong> <span id="previewVehicle">—</span></p>
+          <p class="preview__line"><strong>Услуга:</strong> <span id="previewService">—</span></p>
+          <p class="preview__line"><strong>Номер:</strong> <span id="previewPlate">Не нужен</span></p>
+          <p class="preview__line"><strong>Сумма ДКП:</strong> <span id="previewSummaDkp">—</span></p>
+          <p class="preview__line"><strong>К оплате:</strong> <span id="previewTotal">0 ₽</span></p>
+        </div>
+      </section>
+
+      <!-- Список документов для печати (подставляются по типу услуги) -->
+      <section class="card card--docs" id="docsCard">
+        <h2 class="card__title">Документы для печати</h2>
+        <ul class="doc-list" id="docList">
+          <li class="doc-list__item doc-list__item--placeholder">Выберите тип услуги — список заполнится автоматически</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span id="orderIdDisplay"></span>
+      <span class="footer__time" id="currentTime"></span>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

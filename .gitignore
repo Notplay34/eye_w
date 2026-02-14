@@ -1,0 +1,33 @@
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/*.egg
+
+# Сборка (старое приложение — не коммитим артефакт)
+/dist/
+
+# Переменные окружения
+.env
+.env.local
+*.env
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Логи и кэш
+*.log
+.cache/
