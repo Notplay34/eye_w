@@ -18,7 +18,10 @@
     clientPassport: el('clientPassport'),
     clientAddress: el('clientAddress'),
     clientPhone: el('clientPhone'),
-    clientComment: el('clientComment'),
+    clientIsLegal: el('clientIsLegal'),
+    clientLegalName: el('clientLegalName'),
+    clientInn: el('clientInn'),
+    clientOgrn: el('clientOgrn'),
     hasSeller: el('hasSeller'),
     sellerFio: el('sellerFio'),
     sellerPassport: el('sellerPassport'),
@@ -126,14 +129,19 @@
     if (summary.sumStateDuty) summary.sumStateDuty.textContent = formatMoney(duty);
     if (summary.sumIncome) summary.sumIncome.textContent = formatMoney(income);
     if (summary.sumTotal) summary.sumTotal.textContent = formatMoney(total);
-    var canPay = total > 0 && inputs.clientFio && inputs.clientFio.value.trim() && selectedDocuments.length > 0;
+    var isLegal = inputs.clientIsLegal && inputs.clientIsLegal.checked;
+    var clientFilled = isLegal
+      ? (inputs.clientLegalName && inputs.clientLegalName.value.trim())
+      : (inputs.clientFio && inputs.clientFio.value.trim());
+    var canPay = total > 0 && clientFilled && selectedDocuments.length > 0;
     if (btnAcceptCash) btnAcceptCash.disabled = !canPay;
     if (btnPrint) btnPrint.disabled = !canPay;
   }
 
   function updatePreview() {
-    var fio = (inputs.clientFio && inputs.clientFio.value.trim()) || '—';
-    var passport = (inputs.clientPassport && inputs.clientPassport.value.trim()) || '—';
+    var isLegal = inputs.clientIsLegal && inputs.clientIsLegal.checked;
+    var fio = isLegal ? '—' : ((inputs.clientFio && inputs.clientFio.value.trim()) || '—');
+    var passport = isLegal ? '—' : ((inputs.clientPassport && inputs.clientPassport.value.trim()) || '—');
     var address = (inputs.clientAddress && inputs.clientAddress.value.trim()) || '—';
     var phone = (inputs.clientPhone && inputs.clientPhone.value.trim()) || '—';
     var seller = '—';
@@ -158,8 +166,8 @@
     }
     if (preview.previewDkp) preview.previewDkp.textContent = pullDkp ? dkpStr : (inputs.dkpSummary && inputs.dkpSummary.value.trim()) || '—';
     var docLabels = selectedDocuments.length ? selectedDocuments.map(function (d) { return d.label || d.template; }).join(', ') : '—';
-    if (preview.previewFio) preview.previewFio.textContent = fio;
-    if (preview.previewPassport) preview.previewPassport.textContent = passport;
+    if (preview.previewFio) preview.previewFio.textContent = isLegal ? ((inputs.clientLegalName && inputs.clientLegalName.value.trim()) || '—') : fio;
+    if (preview.previewPassport) preview.previewPassport.textContent = isLegal ? ('ИНН ' + ((inputs.clientInn && inputs.clientInn.value.trim()) || '—') + (inputs.clientOgrn && inputs.clientOgrn.value.trim() ? ', ОГРН ' + inputs.clientOgrn.value.trim() : '')) : passport;
     if (preview.previewAddress) preview.previewAddress.textContent = address;
     if (preview.previewPhone) preview.previewPhone.textContent = phone;
     if (preview.previewSeller) preview.previewSeller.textContent = seller;
@@ -210,7 +218,11 @@
       client_passport: (inputs.clientPassport && inputs.clientPassport.value.trim()) || null,
       client_address: (inputs.clientAddress && inputs.clientAddress.value.trim()) || null,
       client_phone: (inputs.clientPhone && inputs.clientPhone.value.trim()) || null,
-      client_comment: (inputs.clientComment && inputs.clientComment.value.trim()) || null,
+      client_comment: null,
+      client_is_legal: !!(inputs.clientIsLegal && inputs.clientIsLegal.checked),
+      client_legal_name: (inputs.clientLegalName && inputs.clientLegalName.value.trim()) || null,
+      client_inn: (inputs.clientInn && inputs.clientInn.value.trim()) || null,
+      client_ogrn: (inputs.clientOgrn && inputs.clientOgrn.value.trim()) || null,
       seller_fio: (inputs.hasSeller && inputs.hasSeller.checked && inputs.sellerFio && inputs.sellerFio.value.trim()) ? inputs.sellerFio.value.trim() : null,
       seller_passport: (inputs.hasSeller && inputs.hasSeller.checked && inputs.sellerPassport && inputs.sellerPassport.value.trim()) ? inputs.sellerPassport.value.trim() : null,
       seller_address: (inputs.hasSeller && inputs.hasSeller.checked && inputs.sellerAddress && inputs.sellerAddress.value.trim()) ? inputs.sellerAddress.value.trim() : null,
@@ -317,7 +329,22 @@
     }
   }
 
+  function toggleClientType() {
+    var isLegal = inputs.clientIsLegal && inputs.clientIsLegal.checked;
+    var ind = el('clientIndividual');
+    var leg = el('clientLegal');
+    if (ind) ind.style.display = isLegal ? 'none' : '';
+    if (leg) leg.style.display = isLegal ? '' : 'none';
+  }
+
   function bindInputs() {
+    if (inputs.clientIsLegal) {
+      inputs.clientIsLegal.addEventListener('change', function () {
+        toggleClientType();
+        syncFromMainForm();
+      });
+      toggleClientType();
+    }
     Object.keys(inputs).forEach(function (key) {
       var node = inputs[key];
       if (!node) return;

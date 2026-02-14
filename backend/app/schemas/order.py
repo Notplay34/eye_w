@@ -17,6 +17,10 @@ class OrderCreate(BaseModel):
     client_address: Optional[str] = None
     client_phone: Optional[str] = None
     client_comment: Optional[str] = None
+    client_is_legal: bool = False
+    client_legal_name: Optional[str] = None
+    client_inn: Optional[str] = None
+    client_ogrn: Optional[str] = None
     seller_fio: Optional[str] = None
     seller_passport: Optional[str] = None
     seller_address: Optional[str] = None

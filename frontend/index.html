@@ -27,7 +27,14 @@
 
         <fieldset class="form-section">
           <legend class="form-section__title">Покупатель / клиент</legend>
-          <div class="form-grid">
+          <div class="form-section__toggle" style="margin-bottom:0.75rem">
+            <label class="toggle-label">
+              <input type="checkbox" id="clientIsLegal" class="toggle-label__input" autocomplete="off">
+              <span class="toggle-label__box"></span>
+              <span class="toggle-label__text">Клиент — юр. лицо</span>
+            </label>
+          </div>
+          <div class="form-grid" id="clientIndividual">
             <div class="field">
               <label class="field__label" for="clientFio">ФИО</label>
               <input type="text" id="clientFio" class="field__input" placeholder="Иванов Иван Иванович" autocomplete="off">
@@ -36,17 +43,29 @@
               <label class="field__label" for="clientPassport">Паспорт</label>
               <input type="text" id="clientPassport" class="field__input" placeholder="серия номер" autocomplete="off">
             </div>
+          </div>
+          <div class="form-grid" id="clientLegal" style="display:none">
+            <div class="field field--full">
+              <label class="field__label" for="clientLegalName">Название</label>
+              <input type="text" id="clientLegalName" class="field__input" placeholder="наименование организации" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="clientInn">ИНН</label>
+              <input type="text" id="clientInn" class="field__input" placeholder="ИНН" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="field__label" for="clientOgrn">ОГРН</label>
+              <input type="text" id="clientOgrn" class="field__input" placeholder="ОГРН" autocomplete="off">
+            </div>
+          </div>
+          <div class="form-grid">
             <div class="field field--full">
               <label class="field__label" for="clientAddress">Адрес</label>
               <input type="text" id="clientAddress" class="field__input" placeholder="адрес регистрации" autocomplete="off">
             </div>
-            <div class="field">
+            <div class="field field--full">
               <label class="field__label" for="clientPhone">Телефон</label>
               <input type="tel" id="clientPhone" class="field__input" placeholder="+7 (___) ___-__-__" autocomplete="off">
-            </div>
-            <div class="field field--full">
-              <label class="field__label" for="clientComment">Комментарий</label>
-              <input type="text" id="clientComment" class="field__input" placeholder="Необязательно" autocomplete="off">
             </div>
           </div>
         </fieldset>

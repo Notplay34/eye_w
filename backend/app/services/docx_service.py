@@ -20,6 +20,7 @@ PLACEHOLDER_TO_FIELD = {
     "Паспорт": "client_passport",
     "Адрес": "client_address",
     "Телефон": "client_phone",
+    "Номер телефона": "client_phone",
     "ФИО продавец": "seller_fio",
     "Паспорт продавец": "seller_passport",
     "Адрес продавец": "seller_address",
@@ -38,6 +39,9 @@ PLACEHOLDER_TO_FIELD = {
     "Дата ДКП": "dkp_date",
     "Номер договора": "dkp_number",
     "ДКП": "dkp_summary",
+    "Название": "client_legal_name",
+    "ИНН": "client_inn",
+    "ОГРН": "client_ogrn",
 }
 
 
