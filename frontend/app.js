@@ -5,8 +5,9 @@
  */
 
 (function () {
-  // Локально (localhost) — отдельный порт backend; по домену (eye34z.duckdns.org и т.п.) — тот же хост (nginx проксирует).
-const API_BASE_URL = window.API_BASE_URL ?? (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
+  var API_BASE_URL = window.API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
+  var fetchApi = window.fetchWithAuth || fetch;
+  if (window.getToken && !window.getToken()) return;
 
   const SERVICE_LABELS = {
     mreo: 'МРЭО (постановка/снятие)',
@@ -233,7 +234,7 @@ const API_BASE_URL = window.API_BASE_URL ?? (window.location.hostname === 'local
     btnAcceptCash.textContent = 'Отправка…';
 
     try {
-      const resOrder = await fetch(API_BASE_URL + '/orders', {
+      const resOrder = await fetchApi(API_BASE_URL + '/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(buildOrderPayload())
@@ -244,7 +245,7 @@ const API_BASE_URL = window.API_BASE_URL ?? (window.location.hostname === 'local
       }
       const order = await resOrder.json();
 
-      const resPay = await fetch(API_BASE_URL + '/orders/' + order.id + '/pay', {
+      const resPay = await fetchApi(API_BASE_URL + '/orders/' + order.id + '/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -280,7 +281,10 @@ const API_BASE_URL = window.API_BASE_URL ?? (window.location.hostname === 'local
     if (withPlate) docs.push('number.docx');
     docs.forEach(function (docName) {
       const url = API_BASE_URL + '/orders/' + orderId + '/documents/' + encodeURIComponent(docName);
-      window.open(url, '_blank', 'noopener');
+      fetchApi(url).then(function (r) { return r.blob(); }).then(function (blob) {
+        var u = URL.createObjectURL(blob);
+        window.open(u, '_blank', 'noopener');
+      });
     });
   }
 
@@ -288,7 +292,7 @@ const API_BASE_URL = window.API_BASE_URL ?? (window.location.hostname === 'local
 
   async function loadEmployees() {
     try {
-      const res = await fetch(API_BASE_URL + '/employees');
+      const res = await fetchApi(API_BASE_URL + '/employees');
       if (!res.ok) return;
       const list = await res.json();
       if (!operatorSelect) return;

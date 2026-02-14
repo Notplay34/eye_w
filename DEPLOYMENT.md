@@ -2,6 +2,16 @@
 
 Краткий порядок действий после SSH-подключения к серверу (например `ssh root@194.87.103.157`).
 
+**Вход в систему:** При первом запуске создаётся суперпользователь **sergey151** / **1wq21wq2** (директор). Остальных сотрудников добавляет директор в разделе «Управление аккаунтами».
+
+**Чтобы всё запустилось одной командой** (после того как установлены PostgreSQL, nginx, код в `/opt/eye_w`, backend установлен в venv и настроен systemd-сервис `eye_w`):
+
+```bash
+cd /opt/eye_w && git pull && bash deploy/setup_server.sh
+```
+
+Скрипт добавит `JWT_SECRET` в `backend/.env` (если нет), подставит nginx-конфиг с поддержкой входа и перезапустит сервисы. После этого откройте сайт и войдите: **sergey151** / **1wq21wq2**.
+
 **Домен (DuckDNS и т.п.):** Чтобы открывать сайт по имени (например `eye34z.duckdns.org`): (1) В панели DuckDNS привязать домен к IP сервера. (2) При деплое задать `SERVER_NAME=eye34z.duckdns.org` перед запуском скрипта или после деплоя вручную в nginx в `server_name` указать этот домен и выполнить `nginx -t && systemctl reload nginx`. Frontend при открытии с этого домена сам ходит в API на тот же хост (прокси через nginx).
 
 ---
@@ -66,6 +76,7 @@ nano .env
 
 ```
 DATABASE_URL=postgresql+asyncpg://eye_user:eye_pass@localhost:5432/eye_w
+JWT_SECRET=придумайте_длинный_секретный_ключ
 ```
 
 Запуск вручную для проверки:
@@ -89,37 +100,15 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ## 6. Nginx и автозапуск backend
 
-Пример конфига nginx (`/etc/nginx/sites-available/eye_w`):
-
-```nginx
-server {
-    listen 80;
-    server_name ваш-домен.ru;   # или IP
-
-    root /opt/eye_w/frontend;
-    index index.html;
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /docs { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; }
-    location /openapi.json { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; }
-    location /health { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; }
-    location /orders { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; }
-    location /employees { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; }
-    location /analytics { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; }
-    location /auth { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; }
-}
-```
-
-Если API на подпути не нужен, можно проксировать весь бэкенд на другой поддомен или порт.
-
-Включить сайт и перезагрузить nginx:
+Готовый конфиг лежит в репозитории: `deploy/nginx-eye_w.conf`. Скопировать и включить:
 
 ```bash
-ln -s /etc/nginx/sites-available/eye_w /etc/nginx/sites-enabled/
+cp /opt/eye_w/deploy/nginx-eye_w.conf /etc/nginx/sites-available/eye_w
+ln -sf /etc/nginx/sites-available/eye_w /etc/nginx/sites-enabled/eye_w
 nginx -t && systemctl reload nginx
 ```
+
+Важно: в конфиге используется **location /auth/** (со слэшем), иначе запрос к файлу `auth.js` уйдёт в бэкенд и форма входа не заработает. Для работы входа во всех API-локациях должен быть **proxy_set_header Authorization $http_authorization;**.
 
 **Systemd-сервис для backend** (`/etc/systemd/system/eye_w.service`):
 

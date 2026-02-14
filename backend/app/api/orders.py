@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.logging_config import get_logger
+from app.api.auth import RequireFormAccess, UserInfo
 
 logger = get_logger(__name__)
 from app.models import Order, OrderStatus, Payment, PaymentType
@@ -26,7 +27,11 @@ async def _get_order(db: AsyncSession, order_id: int) -> Optional[Order]:
 
 
 @router.post("", response_model=OrderResponse)
-async def post_order(data: OrderCreate, db: AsyncSession = Depends(get_db)):
+async def post_order(
+    data: OrderCreate,
+    db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequireFormAccess),
+):
     order = await create_order(db, data)
     logger.info("Создан заказ id=%s public_id=%s", order.id, order.public_id)
     return OrderResponse(
@@ -48,6 +53,7 @@ async def pay_order(
     order_id: int,
     employee_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequireFormAccess),
 ):
     order = await _get_order(db, order_id)
     if not order:
@@ -102,6 +108,7 @@ async def list_orders(
     status: Optional[OrderStatus] = None,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequireFormAccess),
 ):
     q = select(Order).order_by(Order.created_at.desc()).limit(limit)
     if status is not None:
@@ -126,7 +133,11 @@ async def list_orders(
 
 
 @router.get("/{order_id}", response_model=OrderResponse)
-async def get_order(order_id: int, db: AsyncSession = Depends(get_db)):
+async def get_order(
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequireFormAccess),
+):
     order = await _get_order(db, order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Заказ не найден")

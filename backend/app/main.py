@@ -3,18 +3,66 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import select, text
 
-from app.core.database import engine, Base
+from app.core.database import engine, Base, async_session_maker
 from app.core.logging_config import setup_logging, get_logger
-from app.models import Employee, Order, Payment, Plate
+from app.models import Employee
+from app.models.employee import EmployeeRole
 from app.api.orders import router as orders_router
 from app.api.employees import router as employees_router
 from app.api.documents import router as documents_router
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
+from app.services.auth_service import hash_password
 
 setup_logging()
 logger = get_logger(__name__)
+
+SUPERUSER_LOGIN = "sergey151"
+SUPERUSER_PASSWORD = "1wq21wq2"
+SUPERUSER_NAME = "Сергей"
+
+
+async def ensure_columns_and_enum():
+    """Добавить колонки login, password_hash и ROLE_MANAGER в enum для старых БД."""
+    async with engine.begin() as conn:
+        await conn.execute(text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='employees' AND column_name='login') THEN
+                    ALTER TABLE employees ADD COLUMN login VARCHAR(64) UNIQUE;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='employees' AND column_name='password_hash') THEN
+                    ALTER TABLE employees ADD COLUMN password_hash VARCHAR(255);
+                END IF;
+            END $$;
+        """))
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("ALTER TYPE employeerole ADD VALUE 'ROLE_MANAGER'"))
+            await conn.commit()
+    except Exception as e:
+        if "already exists" not in str(e).lower():
+            logger.warning("Enum ROLE_MANAGER: %s", e)
+
+
+async def ensure_superuser():
+    """Создать суперпользователя sergey151, если такого логина ещё нет."""
+    async with async_session_maker() as session:
+        r = await session.execute(select(Employee).where(Employee.login == SUPERUSER_LOGIN))
+        if r.scalar_one_or_none() is not None:
+            return
+        emp = Employee(
+            name=SUPERUSER_NAME,
+            role=EmployeeRole.ROLE_ADMIN,
+            login=SUPERUSER_LOGIN,
+            password_hash=hash_password(SUPERUSER_PASSWORD),
+            is_active=True,
+        )
+        session.add(emp)
+        await session.commit()
+        logger.info("Создан суперпользователь: %s", SUPERUSER_LOGIN)
 
 
 @asynccontextmanager
@@ -22,6 +70,14 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Таблицы БД проверены/созданы")
+    try:
+        await ensure_columns_and_enum()
+    except Exception as e:
+        logger.warning("Миграция колонок: %s", e)
+    try:
+        await ensure_superuser()
+    except Exception as e:
+        logger.warning("Суперпользователь: %s", e)
     yield
     await engine.dispose()
 

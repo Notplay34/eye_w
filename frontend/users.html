@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Управление аккаунтами</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .users { max-width: 900px; margin: 0 auto; padding: 1rem; }
+    .users h1 { font-family: var(--font-serif); margin-bottom: 0.5rem; }
+    .users__link { margin-bottom: 1rem; }
+    .users__link a { color: var(--accent); }
+    .users table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 1rem; }
+    .users th, .users td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    .users th { color: var(--text-muted); font-weight: 500; }
+    .users .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.85rem; }
+    .users .error { color: #b91c1c; }
+    .users .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 10; }
+    .users .modal.show { display: flex; }
+    .users .modal__box { background: var(--surface); padding: 1.5rem; border-radius: var(--radius); min-width: 320px; max-width: 100%; }
+    .users .modal__box h3 { margin: 0 0 1rem; }
+    .users .modal__box label { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
+    .users .modal__box input, .users .modal__box select { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; box-sizing: border-box; }
+    .users .modal__box .row { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .users .inactive { opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <div class="users">
+    <h1>Управление аккаунтами</h1>
+    <p class="users__link">
+      <a href="index.html">← Форма</a>
+      <a href="admin.html" style="margin-left:1rem;">Админка</a>
+    </p>
+    <p><button type="button" class="btn" id="btnAdd">Добавить сотрудника</button></p>
+    <div id="listContent" class="loading">Загрузка…</div>
+  </div>
+
+  <div class="modal" id="modalForm">
+    <div class="modal__box">
+      <h3 id="modalTitle">Добавить сотрудника</h3>
+      <form id="formEdit">
+        <input type="hidden" id="formId" value="">
+        <label>Имя</label>
+        <input type="text" id="formName" required>
+        <label>Логин (для входа в систему)</label>
+        <input type="text" id="formLogin" autocomplete="off">
+        <label>Пароль <span id="formPasswordHint">(оставьте пустым, чтобы не менять)</span></label>
+        <input type="password" id="formPassword" autocomplete="new-password">
+        <label>Роль</label>
+        <select id="formRole">
+          <option value="ROLE_OPERATOR">Оператор</option>
+          <option value="ROLE_MANAGER">Управляющий</option>
+          <option value="ROLE_ADMIN">Директор</option>
+        </select>
+        <label id="formActiveLabel" style="display:none;"><input type="checkbox" id="formActive" checked> Активен</label>
+        <div class="row">
+          <button type="submit" class="btn">Сохранить</button>
+          <button type="button" class="btn" id="btnCancel">Отмена</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    (function () {
+      if (!window.requireAuth()) return;
+      var user = window.getUser();
+      if (user && user.role !== 'ROLE_ADMIN') {
+        document.getElementById('listContent').innerHTML = '<p class="error">Доступ только у директора.</p>';
+        return;
+      }
+      var API = window.API_BASE_URL || '';
+      var fetchApi = window.fetchWithAuth || fetch;
+      var listEl = document.getElementById('listContent');
+      var modal = document.getElementById('modalForm');
+      var form = document.getElementById('formEdit');
+      var editingId = null;
+
+      function roleLabel(r) {
+        return { ROLE_OPERATOR: 'Оператор', ROLE_MANAGER: 'Управляющий', ROLE_ADMIN: 'Директор' }[r] || r;
+      }
+
+      function loadList() {
+        listEl.textContent = 'Загрузка…';
+        fetchApi(API + '/employees?all=1').then(function (r) {
+          if (!r.ok) throw new Error(r.statusText);
+          return r.json();
+        }).then(function (list) {
+          if (!list.length) {
+            listEl.innerHTML = '<p class="text-muted">Нет сотрудников. Нажмите «Добавить сотрудника».</p>';
+            return;
+          }
+          var rows = list.map(function (e) {
+            var tr = e.is_active ? '' : ' class="inactive"';
+            return '<tr' + tr + '><td>' + e.id + '</td><td>' + (e.name || '') + '</td><td>' + (e.login || '—') + '</td><td>' + roleLabel(e.role) + '</td><td>' + (e.is_active ? 'Да' : 'Нет') + '</td><td><button type="button" class="btn btn-sm btn-edit" data-id="' + e.id + '">Изменить</button></td></tr>';
+          }).join('');
+          listEl.innerHTML = '<table><thead><tr><th>ID</th><th>Имя</th><th>Логин</th><th>Роль</th><th>Активен</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+          listEl.querySelectorAll('.btn-edit').forEach(function (btn) {
+            btn.addEventListener('click', function () { openEdit(Number(btn.getAttribute('data-id'))); });
+          });
+        }).catch(function (err) {
+          listEl.innerHTML = '<p class="error">' + (err.message || 'Ошибка загрузки') + '</p>';
+        });
+      }
+
+      function openAdd() {
+        editingId = null;
+        document.getElementById('modalTitle').textContent = 'Добавить сотрудника';
+        document.getElementById('formId').value = '';
+        document.getElementById('formName').value = '';
+        document.getElementById('formLogin').value = '';
+        document.getElementById('formLogin').disabled = false;
+        document.getElementById('formPassword').value = '';
+        document.getElementById('formPasswordHint').textContent = '';
+        document.getElementById('formActiveLabel').style.display = 'none';
+        modal.classList.add('show');
+      }
+
+      function openEdit(id) {
+        fetchApi(API + '/employees?all=1').then(function (r) { return r.json(); }).then(function (list) {
+          var e = list.find(function (x) { return x.id === id; });
+          if (!e) return;
+          editingId = id;
+          document.getElementById('modalTitle').textContent = 'Изменить сотрудника';
+          document.getElementById('formId').value = id;
+          document.getElementById('formName').value = e.name || '';
+          document.getElementById('formLogin').value = e.login || '';
+          document.getElementById('formLogin').disabled = true;
+          document.getElementById('formPassword').value = '';
+          document.getElementById('formPasswordHint').textContent = '(оставьте пустым, чтобы не менять)';
+          document.getElementById('formRole').value = e.role || 'ROLE_OPERATOR';
+          document.getElementById('formActive').checked = e.is_active !== false;
+          document.getElementById('formActiveLabel').style.display = 'block';
+          modal.classList.add('show');
+        });
+      }
+
+      function closeModal() {
+        modal.classList.remove('show');
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var id = document.getElementById('formId').value;
+        var payload = {
+          name: document.getElementById('formName').value.trim(),
+          role: document.getElementById('formRole').value,
+          is_active: document.getElementById('formActive').checked
+        };
+        if (!editingId) {
+          payload.login = document.getElementById('formLogin').value.trim() || null;
+          payload.password = document.getElementById('formPassword').value || null;
+          if (!payload.login || !payload.password) {
+            alert('Для нового сотрудника укажите логин и пароль.');
+            return;
+          }
+        } else {
+          payload.login = document.getElementById('formLogin').value.trim() || null;
+          var pwd = document.getElementById('formPassword').value;
+          if (pwd) payload.password = pwd;
+        }
+        var url = editingId ? API + '/employees/' + editingId : API + '/employees';
+        var method = editingId ? 'PATCH' : 'POST';
+        fetchApi(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(function (r) {
+          if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+          closeModal();
+          loadList();
+        }).catch(function (err) {
+          alert(err.message || 'Ошибка сохранения');
+        });
+      });
+
+      document.getElementById('btnAdd').addEventListener('click', openAdd);
+      document.getElementById('btnCancel').addEventListener('click', closeModal);
+      modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+      loadList();
+    })();
+  </script>
+</body>
+</html>

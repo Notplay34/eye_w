@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>if(!localStorage.getItem('eye_w_token'))window.location.replace('login.html');</script>
   <title>Павильон 1 — Оформление заказов</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +22,10 @@
         </select>
         <span class="header__operator-name" id="operatorName">—</span>
         <button type="button" class="header__operator-btn" id="btnSetOperator" title="Указать имя вручную">✎</button>
+      </div>
+      <div class="header__user" id="headerUser" style="margin-left:1rem;font-size:0.85rem;">
+        <span id="currentUserName"></span>
+        <a href="login.html" id="btnLogout" style="margin-left:0.5rem;">Выйти</a>
       </div>
     </header>
 
@@ -226,10 +231,32 @@
     <footer class="footer">
       <span id="orderIdDisplay"></span>
       <span class="footer__time" id="currentTime"></span>
-      <a href="admin.html" class="footer__admin" title="Просмотр данных БД">Админка</a>
+      <a href="admin.html" class="footer__admin" id="footerAdmin" title="Просмотр данных БД" style="display:none;">Админка</a>
+      <a href="users.html" class="footer__admin" id="footerUsers" title="Управление аккаунтами" style="display:none;">Управление аккаунтами</a>
     </footer>
   </div>
 
+  <script src="auth.js"></script>
+  <script>
+    (function(){
+      if (!window.requireAuth()) return;
+      var user = window.getUser();
+      if (user) {
+        var roleLabel = { ROLE_OPERATOR: 'Оператор', ROLE_MANAGER: 'Управляющий', ROLE_ADMIN: 'Директор' }[user.role] || user.role;
+        var el = document.getElementById('currentUserName');
+        if (el) el.textContent = user.name + ' (' + roleLabel + ')';
+        var adminLink = document.getElementById('footerAdmin');
+        if (adminLink && (user.role === 'ROLE_MANAGER' || user.role === 'ROLE_ADMIN')) adminLink.style.display = '';
+        var usersLink = document.getElementById('footerUsers');
+        if (usersLink && user.role === 'ROLE_ADMIN') usersLink.style.display = '';
+      }
+      document.getElementById('btnLogout').addEventListener('click', function (e) {
+        e.preventDefault();
+        window.clearAuth();
+        window.location.href = 'login.html';
+      });
+    })();
+  </script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -31,7 +31,10 @@
 <body>
   <div class="admin">
     <h1>Админка</h1>
-    <p class="admin__link"><a href="index.html">← Форма оператора</a></p>
+    <p class="admin__link">
+      <a href="index.html">← Форма оператора</a>
+      <span id="adminUsersLink" style="margin-left:1rem; display:none;"><a href="users.html">Управление аккаунтами</a></span>
+    </p>
     <button type="button" class="btn btn-refresh" id="btnRefresh">Обновить данные</button>
 
     <section id="sectionToday">
@@ -50,12 +53,17 @@
     </section>
   </div>
 
+  <script src="auth.js"></script>
   <script>
     (function() {
-      const API_BASE = window.API_BASE_URL ?? (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
-      const todayEl = document.getElementById('todayContent');
-      const ordersEl = document.getElementById('ordersContent');
-      const employeesEl = document.getElementById('employeesContent');
+      if (!window.requireAuth()) return;
+      var user = window.getUser();
+      if (user && user.role === 'ROLE_ADMIN') document.getElementById('adminUsersLink').style.display = 'inline';
+      var API_BASE = window.API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
+      var fetchApi = window.fetchWithAuth || fetch;
+      var todayEl = document.getElementById('todayContent');
+      var ordersEl = document.getElementById('ordersContent');
+      var employeesEl = document.getElementById('employeesContent');
 
       function showErr(el, msg) {
         el.innerHTML = '<span class="error">' + (msg || 'Ошибка загрузки') + '</span>';
@@ -63,14 +71,14 @@
 
       async function loadToday() {
         try {
-          const r = await fetch(API_BASE + '/analytics/today');
+          const r = await fetchApi(API_BASE + '/analytics/today');
           if (!r.ok) throw new Error(r.statusText);
           const d = await r.json();
           todayEl.innerHTML = [
             '<div class="stats">',
             '<div class="stat"><strong>' + Number(d.total_revenue) + ' ₽</strong><span>Выручка за день</span></div>',
             '<div class="stat"><strong>' + (d.orders_count || 0) + '</strong><span>Оплаченных заказов</span></div>',
-            '<div class="stat"><strong>' + Number(d.state_duty) + ' ₽</strong><span>Госпошлина</span></div>',
+            '<div class="stat"><strong>' + Number(d.state_duty_total) + ' ₽</strong><span>Госпошлина</span></div>',
             '<div class="stat"><strong>' + Number(d.income_pavilion1) + ' ₽</strong><span>Доход павильон 1</span></div>',
             '<div class="stat"><strong>' + Number(d.income_pavilion2) + ' ₽</strong><span>Доход павильон 2</span></div>',
             '</div>'
@@ -82,7 +90,7 @@
 
       async function loadOrders() {
         try {
-          const r = await fetch(API_BASE + '/orders?limit=100');
+          const r = await fetchApi(API_BASE + '/orders?limit=100');
           if (!r.ok) throw new Error(r.statusText);
           const list = await r.json();
           if (!list.length) {
@@ -111,7 +119,7 @@
 
       async function loadEmployees() {
         try {
-          const r = await fetch(API_BASE + '/employees');
+          const r = await fetchApi(API_BASE + '/employees');
           if (!r.ok) throw new Error(r.statusText);
           const list = await r.json();
           if (!list.length) {

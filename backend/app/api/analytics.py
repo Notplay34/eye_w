@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.auth import RequireAnalyticsAccess, UserInfo
 from app.core.database import get_db
 from app.models import Order, Payment, PaymentType
 from app.schemas.analytics import (
@@ -35,7 +36,10 @@ def _start_end_month():
 
 
 @router.get("/today", response_model=TodayAnalytics)
-async def analytics_today(db: AsyncSession = Depends(get_db)):
+async def analytics_today(
+    db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequireAnalyticsAccess),
+):
     start, end = _start_end_today()
     # Считаем по платежам за сегодня
     q = (
@@ -91,7 +95,10 @@ async def analytics_today(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/month", response_model=MonthAnalytics)
-async def analytics_month(db: AsyncSession = Depends(get_db)):
+async def analytics_month(
+    db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequireAnalyticsAccess),
+):
     start, end = _start_end_month()
     q = (
         select(
@@ -149,6 +156,7 @@ async def analytics_month(db: AsyncSession = Depends(get_db)):
 async def analytics_employees(
     period: str = Query("day", description="day | month"),
     db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequireAnalyticsAccess),
 ):
     if period == "month":
         start, end = _start_end_month()
