@@ -1,6 +1,7 @@
 import enum
 from datetime import datetime
 from decimal import Decimal
+from typing import Optional
 from sqlalchemy import String, Enum, Numeric, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,7 +21,7 @@ class Payment(Base):
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.id"), nullable=False)
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     type: Mapped[PaymentType] = mapped_column(Enum(PaymentType), nullable=False)
-    employee_id: Mapped[int | None] = mapped_column(ForeignKey("employees.id"), nullable=True)
+    employee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("employees.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     order = relationship("Order", back_populates="payments")

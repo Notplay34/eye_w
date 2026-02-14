@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +20,7 @@ from app.services.telegram_notify import notify_plate_operators_new_order
 router = APIRouter(prefix="/orders", tags=["orders"])
 
 
-async def _get_order(db: AsyncSession, order_id: int) -> Order | None:
+async def _get_order(db: AsyncSession, order_id: int) -> Optional[Order]:
     result = await db.execute(select(Order).where(Order.id == order_id))
     return result.scalar_one_or_none()
 
@@ -44,7 +46,7 @@ async def post_order(data: OrderCreate, db: AsyncSession = Depends(get_db)):
 @router.post("/{order_id}/pay", response_model=PayOrderResponse)
 async def pay_order(
     order_id: int,
-    employee_id: int | None = None,
+    employee_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
 ):
     order = await _get_order(db, order_id)
@@ -97,7 +99,7 @@ async def pay_order(
 
 @router.get("", response_model=list[OrderResponse])
 async def list_orders(
-    status: OrderStatus | None = None,
+    status: Optional[OrderStatus] = None,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
 ):
@@ -164,7 +166,7 @@ async def update_order_status(
     order_id: int,
     body: OrderStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    x_telegram_user_id: str | None = Header(None, alias="X-Telegram-User-Id"),
+    x_telegram_user_id: Optional[str] = Header(None, alias="X-Telegram-User-Id"),
 ):
     if x_telegram_user_id is not None:
         try:

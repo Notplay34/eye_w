@@ -6,6 +6,7 @@
 from datetime import date
 from pathlib import Path
 from io import BytesIO
+from typing import Dict, Optional
 
 from docx import Document
 
@@ -38,7 +39,7 @@ PLACEHOLDER_TO_FIELD = {
 }
 
 
-def _form_data_to_replace_map(form_data: dict | None, doc_date: date | None = None) -> dict[str, str]:
+def _form_data_to_replace_map(form_data: Optional[dict], doc_date: Optional[date] = None) -> Dict[str, str]:
     """Словарь подстановки: «{{ ключ }}» → значение."""
     if not form_data:
         form_data = {}
@@ -65,7 +66,7 @@ def _replace_in_paragraph(paragraph, replace_map: dict[str, str]) -> None:
         paragraph.add_run(text)
 
 
-def render_docx(template_name: str, form_data: dict | None, doc_date: date | None = None) -> bytes:
+def render_docx(template_name: str, form_data: Optional[dict], doc_date: Optional[date] = None) -> bytes:
     """
     Генерирует docx из шаблона (например DKP.docx), подставляя {{ плейсхолдер }} из form_data.
     Возвращает файл как bytes.

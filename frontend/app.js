@@ -5,7 +5,8 @@
  */
 
 (function () {
-  const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000';
+  // Локально (localhost) — отдельный порт backend; по домену (eye34z.duckdns.org и т.п.) — тот же хост (nginx проксирует).
+const API_BASE_URL = window.API_BASE_URL ?? (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
 
   const SERVICE_LABELS = {
     mreo: 'МРЭО (постановка/снятие)',

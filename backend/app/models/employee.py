@@ -1,5 +1,6 @@
 import enum
 from datetime import datetime
+from typing import Optional
 from sqlalchemy import String, Enum, Boolean, BigInteger, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,7 +19,7 @@ class Employee(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[EmployeeRole] = mapped_column(Enum(EmployeeRole), nullable=False)
-    telegram_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    telegram_id: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

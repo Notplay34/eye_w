@@ -4,6 +4,7 @@
 """
 import os
 from decimal import Decimal
+from typing import Optional
 
 import httpx
 
@@ -11,7 +12,7 @@ from app.core.logging_config import get_logger
 
 logger = get_logger(__name__)
 
-def _get_bot_token() -> str | None:
+def _get_bot_token() -> Optional[str]:
     return os.environ.get("TELEGRAM_BOT_TOKEN_PLATE")
 
 

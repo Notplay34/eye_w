@@ -6,6 +6,8 @@ EYE_DIR="${EYE_DIR:-/opt/eye_w}"
 DB_USER="${DB_USER:-eye_user}"
 DB_PASS="${DB_PASS:-eye_pass}"
 DB_NAME="${DB_NAME:-eye_w}"
+# Домен для nginx server_name (например eye34z.duckdns.org). По умолчанию _ (любой хост).
+SERVER_NAME="${SERVER_NAME:-_}"
 
 echo "=== 1. Пакеты ==="
 apt update
@@ -48,8 +50,11 @@ After=network.target postgresql.service
 [Service]
 User=root
 WorkingDirectory=$EYE_DIR/backend
+Environment=PYTHONUNBUFFERED=1
 ExecStart=$EYE_DIR/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
 Restart=always
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
@@ -60,7 +65,6 @@ systemctl restart eye_w
 echo "Backend: systemctl status eye_w"
 
 echo "=== 6. Nginx ==="
-SERVER_NAME="${SERVER_NAME:-_}"
 cat > /etc/nginx/sites-available/eye_w << EOF
 server {
     listen 80;
@@ -80,10 +84,13 @@ server {
 }
 EOF
 ln -sf /etc/nginx/sites-available/eye_w /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 
 echo "=== Готово ==="
-echo "Проверка backend: curl -s http://127.0.0.1:8000/health"
-curl -s http://127.0.0.1:8000/health || true
-echo ""
-echo "Сайт: http://$(hostname -I | awk '{print $1}') или http://194.87.103.157"
+if command -v curl >/dev/null 2>&1; then
+  echo "Проверка backend: curl -s http://127.0.0.1:8000/health"
+  curl -s http://127.0.0.1:8000/health || true
+  echo ""
+fi
+echo "Сайт: http://$(hostname -I | awk '{print $1}')"

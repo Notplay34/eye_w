@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 from app.models import EmployeeRole
@@ -7,7 +9,7 @@ class EmployeeResponse(BaseModel):
     id: int
     name: str
     role: str
-    telegram_id: int | None
+    telegram_id: Optional[int] = None
     is_active: bool
 
     class Config:
@@ -17,11 +19,11 @@ class EmployeeResponse(BaseModel):
 class EmployeeCreate(BaseModel):
     name: str
     role: EmployeeRole
-    telegram_id: int | None = None
+    telegram_id: Optional[int] = None
 
 
 class EmployeeUpdate(BaseModel):
-    name: str | None = None
-    role: EmployeeRole | None = None
-    telegram_id: int | None = None
-    is_active: bool | None = None
+    name: Optional[str] = None
+    role: Optional[EmployeeRole] = None
+    telegram_id: Optional[int] = None
+    is_active: Optional[bool] = None
