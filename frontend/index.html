@@ -74,6 +74,23 @@
                 <input type="text" id="sellerAddress" class="field__input" placeholder="адрес регистрации" autocomplete="off">
               </div>
             </div>
+            <div class="form-section__sub form-section__sub--dkp">
+              <div class="form-section__sub-title">Данные договора (дата, сумма, номер)</div>
+              <div class="form-grid form-grid--dkp">
+                <div class="field">
+                  <label class="field__label" for="dkpDate">Дата договора</label>
+                  <input type="text" id="dkpDate" class="field__input" placeholder="ДД.ММ.ГГГГ" autocomplete="off">
+                </div>
+                <div class="field">
+                  <label class="field__label" for="summaDkp">Сумма договора, ₽</label>
+                  <input type="number" id="summaDkp" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
+                </div>
+                <div class="field">
+                  <label class="field__label" for="dkpNumber">Номер договора (если есть)</label>
+                  <input type="text" id="dkpNumber" class="field__input" placeholder="—" autocomplete="off">
+                </div>
+              </div>
+            </div>
           </div>
         </fieldset>
 
@@ -151,21 +168,10 @@
               <input type="text" id="pts" class="field__input" placeholder="№ ПТС" autocomplete="off">
             </div>
           </div>
-          <div class="form-section__sub form-section__sub--dkp">
-            <div class="form-section__sub-title">ДКП (договор купли-продажи)</div>
-            <div class="form-grid form-grid--dkp">
-              <div class="field">
-                <label class="field__label" for="dkpDate">Дата договора</label>
-                <input type="text" id="dkpDate" class="field__input" placeholder="ДД.ММ.ГГГГ" autocomplete="off">
-              </div>
-              <div class="field">
-                <label class="field__label" for="summaDkp">Сумма договора, ₽</label>
-                <input type="number" id="summaDkp" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
-              </div>
-              <div class="field">
-                <label class="field__label" for="dkpNumber">Номер договора (если есть)</label>
-                <input type="text" id="dkpNumber" class="field__input" placeholder="—" autocomplete="off">
-              </div>
+          <div class="form-section__sub form-section__sub--dkp-single">
+            <div class="field">
+              <label class="field__label" for="dkpSummary">ДКП</label>
+              <input type="text" id="dkpSummary" class="field__input field__input--readonly" placeholder="указывается в блоке «Продавец (для ДКП)»" readonly>
             </div>
           </div>
         </fieldset>

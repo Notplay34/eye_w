@@ -41,6 +41,7 @@
     dkpDate: el('dkpDate'),
     summaDkp: el('summaDkp'),
     dkpNumber: el('dkpNumber'),
+    dkpSummary: el('dkpSummary'),
     stateDuty: el('stateDuty'),
     needPlate: el('needPlate'),
     plateQuantity: el('plateQuantity')
@@ -147,6 +148,7 @@
     if (inputs.summaDkp && num(inputs.summaDkp.value) > 0) dkpParts.push(formatMoney(num(inputs.summaDkp.value)));
     if (inputs.dkpNumber && inputs.dkpNumber.value.trim()) dkpParts.push('№ ' + inputs.dkpNumber.value.trim());
     var dkpStr = dkpParts.length ? dkpParts.join(', ') : '—';
+    if (inputs.dkpSummary) inputs.dkpSummary.value = dkpStr !== '—' ? dkpStr : '';
     var docLabels = selectedDocuments.length ? selectedDocuments.map(function (d) { return d.label || d.template; }).join(', ') : '—';
     if (preview.previewFio) preview.previewFio.textContent = fio;
     if (preview.previewPassport) preview.previewPassport.textContent = passport;
@@ -340,12 +342,20 @@
   function getPlateQuantity() {
     return inputs.plateQuantity ? Math.max(1, parseInt(inputs.plateQuantity.value, 10) || 1) : 1;
   }
+  function isPlateZaiavlenie(d) {
+    return d.template === 'zaiavlenie.docx' && (d.price === 0 || num(d.price) === 0) && (d.label === 'Заявление на номера' || !d.label);
+  }
   function syncPlateToDocuments() {
     var need = inputs.needPlate && inputs.needPlate.checked;
     var qty = getPlateQuantity();
-    selectedDocuments = selectedDocuments.filter(function (d) { return d.template !== 'number.docx'; });
+    selectedDocuments = selectedDocuments.filter(function (d) {
+      if (d.template === 'number.docx') return false;
+      if (isPlateZaiavlenie(d)) return false;
+      return true;
+    });
     if (need) {
       selectedDocuments.push({ template: 'number.docx', label: 'Изготовление номера', price: PLATE_PRICE_PER_UNIT * qty });
+      selectedDocuments.push({ template: 'zaiavlenie.docx', label: 'Заявление на номера', price: 0 });
     }
     if (inputs.plateQuantity) inputs.plateQuantity.disabled = !need;
     renderDocumentsList();

@@ -375,6 +375,16 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
+.form-section__sub--dkp-single .field {
+  max-width: 480px;
+}
+
+.field__input--readonly {
+  background: var(--surface2);
+  color: var(--text-muted);
+  cursor: default;
+}
+
 .field--plate {
   display: flex;
   align-items: flex-end;
