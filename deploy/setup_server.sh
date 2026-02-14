@@ -19,6 +19,8 @@ fi
 
 echo "=== 2. Nginx ==="
 cp deploy/nginx-eye_w.conf /etc/nginx/sites-available/eye_w
+# Убрать default_server, чтобы не конфликтовать с другими сайтами в sites-enabled
+sed -i 's/ listen 80 default_server;/ listen 80;/' /etc/nginx/sites-available/eye_w
 ln -sf /etc/nginx/sites-available/eye_w /etc/nginx/sites-enabled/eye_w 2>/dev/null || true
 nginx -t
 systemctl reload nginx
