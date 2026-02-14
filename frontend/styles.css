@@ -383,11 +383,20 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.footer__admin {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.footer__admin:hover {
+  text-decoration: underline;
+}
+
 /* Responsive */
 @media print {
   .app { max-width: none; padding: 0; }
   .card--primary { border-left-width: 2px; }
-  .actions, .btn, .footer__time, .header__operator-btn { display: none !important; }
+  .actions, .btn, .footer__time, .footer__admin, .header__operator-btn { display: none !important; }
   .card { box-shadow: none; border: 1px solid #ddd; }
 }
 

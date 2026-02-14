@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Админка — данные БД</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .admin { max-width: 1200px; margin: 0 auto; padding: 1rem; }
+    .admin h1 { font-family: var(--font-serif); margin-bottom: 0.5rem; }
+    .admin__link { margin-bottom: 1rem; }
+    .admin__link a { color: var(--accent); }
+    .admin section { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.25rem; margin-bottom: 1.5rem; }
+    .admin section h2 { font-size: 1.1rem; margin: 0 0 1rem; color: var(--text-muted); }
+    .admin table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .admin th, .admin td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    .admin th { color: var(--text-muted); font-weight: 500; }
+    .admin .loading { color: var(--text-muted); }
+    .admin .error { color: #b91c1c; }
+    .admin .stats { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1rem; }
+    .admin .stat { background: var(--surface2); padding: 0.75rem 1rem; border-radius: var(--radius); }
+    .admin .stat strong { display: block; font-size: 1.25rem; color: var(--accent); }
+    .admin .stat span { font-size: 0.85rem; color: var(--text-muted); }
+    .admin .btn-refresh { margin-bottom: 1rem; }
+    .admin .text-muted { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="admin">
+    <h1>Админка</h1>
+    <p class="admin__link"><a href="index.html">← Форма оператора</a></p>
+    <button type="button" class="btn btn-refresh" id="btnRefresh">Обновить данные</button>
+
+    <section id="sectionToday">
+      <h2>Сводка за сегодня</h2>
+      <div id="todayContent" class="loading">Загрузка…</div>
+    </section>
+
+    <section id="sectionOrders">
+      <h2>Заказы (последние 100)</h2>
+      <div id="ordersContent" class="loading">Загрузка…</div>
+    </section>
+
+    <section id="sectionEmployees">
+      <h2>Сотрудники</h2>
+      <div id="employeesContent" class="loading">Загрузка…</div>
+    </section>
+  </div>
+
+  <script>
+    (function() {
+      const API_BASE = window.API_BASE_URL ?? (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
+      const todayEl = document.getElementById('todayContent');
+      const ordersEl = document.getElementById('ordersContent');
+      const employeesEl = document.getElementById('employeesContent');
+
+      function showErr(el, msg) {
+        el.innerHTML = '<span class="error">' + (msg || 'Ошибка загрузки') + '</span>';
+      }
+
+      async function loadToday() {
+        try {
+          const r = await fetch(API_BASE + '/analytics/today');
+          if (!r.ok) throw new Error(r.statusText);
+          const d = await r.json();
+          todayEl.innerHTML = [
+            '<div class="stats">',
+            '<div class="stat"><strong>' + Number(d.total_revenue) + ' ₽</strong><span>Выручка за день</span></div>',
+            '<div class="stat"><strong>' + (d.orders_count || 0) + '</strong><span>Оплаченных заказов</span></div>',
+            '<div class="stat"><strong>' + Number(d.state_duty) + ' ₽</strong><span>Госпошлина</span></div>',
+            '<div class="stat"><strong>' + Number(d.income_pavilion1) + ' ₽</strong><span>Доход павильон 1</span></div>',
+            '<div class="stat"><strong>' + Number(d.income_pavilion2) + ' ₽</strong><span>Доход павильон 2</span></div>',
+            '</div>'
+          ].join('');
+        } catch (e) {
+          showErr(todayEl, e.message);
+        }
+      }
+
+      async function loadOrders() {
+        try {
+          const r = await fetch(API_BASE + '/orders?limit=100');
+          if (!r.ok) throw new Error(r.statusText);
+          const list = await r.json();
+          if (!list.length) {
+            ordersEl.innerHTML = '<p class="text-muted">Заказов пока нет.</p>';
+            return;
+          }
+          const rows = list.map(o => [
+            '<tr>',
+            '<td>' + (o.public_id || '') + '</td>',
+            '<td>' + (o.status || '') + '</td>',
+            '<td>' + Number(o.total_amount) + ' ₽</td>',
+            '<td>' + (o.need_plate ? 'Да' : '—') + '</td>',
+            '<td>' + (o.service_type || '—') + '</td>',
+            '<td>' + (o.created_at ? new Date(o.created_at).toLocaleString('ru') : '') + '</td>',
+            '</tr>'
+          ].join(''));
+          ordersEl.innerHTML = [
+            '<table><thead><tr>',
+            '<th>Номер</th><th>Статус</th><th>Сумма</th><th>Номер</th><th>Услуга</th><th>Создан</th>',
+            '</tr></thead><tbody>', rows.join(''), '</tbody></table>'
+          ].join('');
+        } catch (e) {
+          showErr(ordersEl, e.message);
+        }
+      }
+
+      async function loadEmployees() {
+        try {
+          const r = await fetch(API_BASE + '/employees');
+          if (!r.ok) throw new Error(r.statusText);
+          const list = await r.json();
+          if (!list.length) {
+            employeesEl.innerHTML = '<p class="text-muted">Сотрудников нет.</p>';
+            return;
+          }
+          const rows = list.map(e => [
+            '<tr>',
+            '<td>' + (e.id) + '</td>',
+            '<td>' + (e.name || '') + '</td>',
+            '<td>' + (e.role || '') + '</td>',
+            '<td>' + (e.telegram_id != null ? e.telegram_id : '—') + '</td>',
+            '<td>' + (e.is_active ? 'Да' : 'Нет') + '</td>',
+            '</tr>'
+          ].join(''));
+          employeesEl.innerHTML = [
+            '<table><thead><tr>',
+            '<th>ID</th><th>Имя</th><th>Роль</th><th>Telegram ID</th><th>Активен</th>',
+            '</tr></thead><tbody>', rows.join(''), '</tbody></table>'
+          ].join('');
+        } catch (e) {
+          showErr(employeesEl, e.message);
+        }
+      }
+
+      function refresh() {
+        todayEl.textContent = 'Загрузка…';
+        ordersEl.textContent = 'Загрузка…';
+        employeesEl.textContent = 'Загрузка…';
+        loadToday();
+        loadOrders();
+        loadEmployees();
+      }
+
+      document.getElementById('btnRefresh').addEventListener('click', refresh);
+      refresh();
+    })();
+  </script>
+</body>
+</html>

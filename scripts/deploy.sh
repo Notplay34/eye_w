@@ -18,7 +18,8 @@ RUN_PG="runuser -u postgres --"
 $RUN_PG psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1 || \
   $RUN_PG psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';"
 $RUN_PG psql -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
-  $RUN_PG psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+  $RUN_PG psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER ENCODING 'UTF8' LC_COLLATE='C.UTF-8' LC_CTYPE='C.UTF-8' TEMPLATE=template0;"
+# Если БД уже была с SQL_ASCII — пересоздать вручную: DROP DATABASE eye_w; затем снова запустить скрипт или команду CREATE выше.
 systemctl start postgresql 2>/dev/null || true
 
 echo "=== 3. Код в $EYE_DIR ==="
