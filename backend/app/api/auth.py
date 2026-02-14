@@ -8,6 +8,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.logging_config import get_logger
 from app.models import Employee
 from app.models.employee import EmployeeRole
 from app.services.auth_service import (
@@ -18,6 +19,7 @@ from app.services.auth_service import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer(auto_error=False)
+logger = get_logger(__name__)
 
 
 class UserInfo(BaseModel):
@@ -36,10 +38,13 @@ class LoginResponse(BaseModel):
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
 ) -> Optional[UserInfo]:
-    if not credentials or credentials.scheme.lower() != "bearer":
+    has_header = credentials is not None and credentials.scheme.lower() == "bearer"
+    if not has_header:
+        logger.warning("auth/me: заголовок Authorization отсутствует или не Bearer")
         return None
     payload = decode_token(credentials.credentials)
     if not payload or "sub" not in payload:
+        logger.warning("auth/me: токен не прошёл проверку (неверный или истёк)")
         return None
     return UserInfo(
         id=payload["sub"],
