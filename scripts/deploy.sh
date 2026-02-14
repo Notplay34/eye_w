@@ -12,10 +12,11 @@ apt update
 apt install -y python3 python3-venv python3-pip postgresql nginx git
 
 echo "=== 2. PostgreSQL ==="
-sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1 || \
-  sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';"
-sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
-  sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+RUN_PG="runuser -u postgres --"
+$RUN_PG psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1 || \
+  $RUN_PG psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';"
+$RUN_PG psql -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1 || \
+  $RUN_PG psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
 systemctl start postgresql 2>/dev/null || true
 
 echo "=== 3. Код в $EYE_DIR ==="
