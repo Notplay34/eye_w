@@ -16,9 +16,10 @@ def _get_bot_token() -> Optional[str]:
     return os.environ.get("TELEGRAM_BOT_TOKEN_PLATE")
 
 
-def _format_order_message(order_id: int, public_id: str, total: Decimal, need_plate: bool) -> str:
+def _format_order_message(order_id: int, public_id: str, total: Decimal, plate_quantity: int = 1) -> str:
+    qty = f", {plate_quantity} шт" if plate_quantity > 1 else ""
     return (
-        f"🆕 Новый заказ с номером\n\n"
+        f"🆕 Новый заказ с номером{qty}\n\n"
         f"ID: {public_id} (#{order_id})\n"
         f"Сумма: {total} ₽\n"
         f"Статус: Оплачен"
@@ -42,7 +43,9 @@ async def get_plate_operator_chat_ids(db) -> list[int]:
     return [r for r in rows if r is not None]
 
 
-async def notify_plate_operators_new_order(db, order_id: int, public_id: str, total: Decimal) -> None:
+async def notify_plate_operators_new_order(
+    db, order_id: int, public_id: str, total: Decimal, plate_quantity: int = 1
+) -> None:
     """Отправляет уведомление о новом заказе с номером всем операторам павильона 2."""
     token = _get_bot_token()
     if not token:
@@ -52,7 +55,7 @@ async def notify_plate_operators_new_order(db, order_id: int, public_id: str, to
     if not chat_ids:
         logger.warning("Нет операторов павильона 2 с telegram_id — уведомление не отправлено")
         return
-    text = _format_order_message(order_id, public_id, total, True)
+    text = _format_order_message(order_id, public_id, total, plate_quantity)
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload = {
         "text": text,

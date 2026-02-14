@@ -38,8 +38,12 @@
     srts: el('srts'),
     plateNumber: el('plateNumber'),
     pts: el('pts'),
+    dkpDate: el('dkpDate'),
+    summaDkp: el('summaDkp'),
+    dkpNumber: el('dkpNumber'),
     stateDuty: el('stateDuty'),
-    summaDkp: el('summaDkp')
+    needPlate: el('needPlate'),
+    plateQuantity: el('plateQuantity')
   };
 
   var docSelect = el('docSelect');
@@ -60,8 +64,8 @@
     previewSeller: el('previewSeller'),
     previewTrustee: el('previewTrustee'),
     previewVehicle: el('previewVehicle'),
+    previewDkp: el('previewDkp'),
     previewService: el('previewService'),
-    previewSummaDkp: el('previewSummaDkp'),
     previewTotal: el('previewTotal')
   };
   var btnAcceptCash = el('btnAcceptCash');
@@ -138,8 +142,12 @@
       trustee = [inputs.trusteeFio.value.trim(), inputs.trusteePassport && inputs.trusteePassport.value.trim(), inputs.trusteeBasis && inputs.trusteeBasis.value.trim()].filter(Boolean).join(' · ');
     }
     var vehicle = (inputs.vin && inputs.vin.value.trim()) || (inputs.brandModel && inputs.brandModel.value.trim()) ? [inputs.vin && inputs.vin.value.trim(), inputs.brandModel && inputs.brandModel.value.trim()].filter(Boolean).join(' · ') : '—';
+    var dkpParts = [];
+    if (inputs.dkpDate && inputs.dkpDate.value.trim()) dkpParts.push(inputs.dkpDate.value.trim());
+    if (inputs.summaDkp && num(inputs.summaDkp.value) > 0) dkpParts.push(formatMoney(num(inputs.summaDkp.value)));
+    if (inputs.dkpNumber && inputs.dkpNumber.value.trim()) dkpParts.push('№ ' + inputs.dkpNumber.value.trim());
+    var dkpStr = dkpParts.length ? dkpParts.join(', ') : '—';
     var docLabels = selectedDocuments.length ? selectedDocuments.map(function (d) { return d.label || d.template; }).join(', ') : '—';
-    var summaDkpVal = (inputs.summaDkp && num(inputs.summaDkp.value) > 0) ? formatMoney(num(inputs.summaDkp.value)) : '—';
     if (preview.previewFio) preview.previewFio.textContent = fio;
     if (preview.previewPassport) preview.previewPassport.textContent = passport;
     if (preview.previewAddress) preview.previewAddress.textContent = address;
@@ -147,8 +155,8 @@
     if (preview.previewSeller) preview.previewSeller.textContent = seller;
     if (preview.previewTrustee) preview.previewTrustee.textContent = trustee;
     if (preview.previewVehicle) preview.previewVehicle.textContent = vehicle;
+    if (preview.previewDkp) preview.previewDkp.textContent = dkpStr;
     if (preview.previewService) preview.previewService.textContent = docLabels;
-    if (preview.previewSummaDkp) preview.previewSummaDkp.textContent = summaDkpVal;
     if (preview.previewTotal) preview.previewTotal.textContent = formatMoney(getTotal());
   }
 
@@ -186,7 +194,8 @@
   function buildOrderPayload() {
     var user = window.getUser();
     var employeeId = user && user.id ? user.id : null;
-    var needPlate = selectedDocuments.some(function (d) { return d.template === 'number.docx'; });
+    var needPlate = inputs.needPlate && inputs.needPlate.checked;
+    var plateQuantity = needPlate ? getPlateQuantity() : 1;
     return {
       client_fio: (inputs.clientFio && inputs.clientFio.value.trim()) || null,
       client_passport: (inputs.clientPassport && inputs.clientPassport.value.trim()) || null,
@@ -210,8 +219,11 @@
       srts: (inputs.srts && inputs.srts.value.trim()) || null,
       plate_number: (inputs.plateNumber && inputs.plateNumber.value.trim()) || null,
       pts: (inputs.pts && inputs.pts.value.trim()) || null,
+      dkp_date: (inputs.dkpDate && inputs.dkpDate.value.trim()) || null,
+      dkp_number: (inputs.dkpNumber && inputs.dkpNumber.value.trim()) || null,
       service_type: selectedDocuments[0] ? selectedDocuments[0].template : null,
       need_plate: needPlate,
+      plate_quantity: plateQuantity,
       state_duty: getStateDuty(),
       extra_amount: 0,
       plate_amount: 0,
@@ -311,8 +323,9 @@
       priceList = await r.json();
       if (!Array.isArray(priceList)) priceList = [];
       if (docSelect) {
+        var options = priceList.filter(function (p) { return (p.template || '') !== 'number.docx'; });
         docSelect.innerHTML = '<option value="">Выберите документ из списка</option>' +
-          priceList.map(function (p) {
+          options.map(function (p) {
             var price = typeof p.price === 'number' ? p.price : parseFloat(p.price);
             var label = (p.label || p.template) + ' — ' + (isNaN(price) ? '0' : price) + ' ₽';
             return '<option value="' + (p.template || '').replace(/"/g, '&quot;') + '">' + (label.replace(/</g, '&lt;')) + '</option>';
@@ -320,6 +333,33 @@
       }
     } catch (e) {
       if (docSelect) docSelect.innerHTML = '<option value="">Не удалось загрузить прейскурант</option>';
+    }
+  }
+
+  var PLATE_PRICE_PER_UNIT = 1500;
+  function getPlateQuantity() {
+    return inputs.plateQuantity ? Math.max(1, parseInt(inputs.plateQuantity.value, 10) || 1) : 1;
+  }
+  function syncPlateToDocuments() {
+    var need = inputs.needPlate && inputs.needPlate.checked;
+    var qty = getPlateQuantity();
+    selectedDocuments = selectedDocuments.filter(function (d) { return d.template !== 'number.docx'; });
+    if (need) {
+      selectedDocuments.push({ template: 'number.docx', label: 'Изготовление номера', price: PLATE_PRICE_PER_UNIT * qty });
+    }
+    if (inputs.plateQuantity) inputs.plateQuantity.disabled = !need;
+    renderDocumentsList();
+    updateSummary();
+    updatePreview();
+    updateDocList();
+  }
+  function setupPlateCheckbox() {
+    if (inputs.needPlate) {
+      inputs.needPlate.addEventListener('change', syncPlateToDocuments);
+    }
+    if (inputs.plateQuantity) {
+      inputs.plateQuantity.addEventListener('change', syncPlateToDocuments);
+      inputs.plateQuantity.disabled = !(inputs.needPlate && inputs.needPlate.checked);
     }
   }
 
@@ -343,7 +383,9 @@
   async function init() {
     await loadPriceList();
     bindInputs();
+    setupPlateCheckbox();
     setupTogglableSections();
+    syncPlateToDocuments();
     renderDocumentsList();
     syncFromMainForm();
     updateTime();

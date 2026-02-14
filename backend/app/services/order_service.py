@@ -31,7 +31,10 @@ def _form_data_from_create(d: OrderCreate) -> dict:
         "srts": d.srts,
         "plate_number": d.plate_number,
         "pts": d.pts,
+        "dkp_date": d.dkp_date,
+        "dkp_number": d.dkp_number,
         "summa_dkp": str(d.summa_dkp),
+        "plate_quantity": d.plate_quantity,
     }
     if d.documents:
         out["documents"] = [

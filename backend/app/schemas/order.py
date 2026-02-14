@@ -34,8 +34,11 @@ class OrderCreate(BaseModel):
     srts: Optional[str] = None
     plate_number: Optional[str] = None
     pts: Optional[str] = None
+    dkp_date: Optional[str] = None
+    dkp_number: Optional[str] = None
     service_type: Optional[str] = None
     need_plate: bool = False
+    plate_quantity: int = Field(default=1, ge=1, le=10, description="Количество номеров для изготовления")
     state_duty: Decimal = Field(default=Decimal("0"), ge=0)
     extra_amount: Decimal = Field(default=Decimal("0"), ge=0)
     plate_amount: Decimal = Field(default=Decimal("0"), ge=0)

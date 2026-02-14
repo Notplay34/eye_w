@@ -151,6 +151,23 @@
               <input type="text" id="pts" class="field__input" placeholder="№ ПТС" autocomplete="off">
             </div>
           </div>
+          <div class="form-section__sub form-section__sub--dkp">
+            <div class="form-section__sub-title">ДКП (договор купли-продажи)</div>
+            <div class="form-grid form-grid--dkp">
+              <div class="field">
+                <label class="field__label" for="dkpDate">Дата договора</label>
+                <input type="text" id="dkpDate" class="field__input" placeholder="ДД.ММ.ГГГГ" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field__label" for="summaDkp">Сумма договора, ₽</label>
+                <input type="number" id="summaDkp" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
+              </div>
+              <div class="field">
+                <label class="field__label" for="dkpNumber">Номер договора (если есть)</label>
+                <input type="text" id="dkpNumber" class="field__input" placeholder="—" autocomplete="off">
+              </div>
+            </div>
+          </div>
         </fieldset>
 
         <fieldset class="form-section">
@@ -174,9 +191,20 @@
               <label class="field__label" for="stateDuty">Госпошлина, ₽</label>
               <input type="number" id="stateDuty" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
             </div>
-            <div class="field">
-              <label class="field__label" for="summaDkp">Сумма ДКП, ₽</label>
-              <input type="number" id="summaDkp" class="field__input field__input--number" min="0" step="1" value="0" placeholder="для текста договора">
+            <div class="field field--plate">
+              <div class="plate-option">
+                <label class="toggle-label">
+                  <input type="checkbox" id="needPlate" class="toggle-label__input" autocomplete="off">
+                  <span class="toggle-label__box"></span>
+                  <span class="toggle-label__text">Изготовление номера</span>
+                </label>
+                <span class="plate-option__qty">
+                  <select id="plateQuantity" class="field__select field__select--sm" title="Количество">
+                    <option value="1">1 шт — 1 500 ₽</option>
+                    <option value="2">2 шт — 3 000 ₽</option>
+                  </select>
+                </span>
+              </div>
             </div>
           </div>
         </fieldset>
@@ -221,8 +249,8 @@
           <p class="preview__line"><strong>Продавец:</strong> <span id="previewSeller">—</span></p>
           <p class="preview__line"><strong>Доверенное лицо:</strong> <span id="previewTrustee">—</span></p>
           <p class="preview__line"><strong>VIN / Марка:</strong> <span id="previewVehicle">—</span></p>
+          <p class="preview__line"><strong>ДКП (договор):</strong> <span id="previewDkp">—</span></p>
           <p class="preview__line"><strong>Документы:</strong> <span id="previewService">—</span></p>
-          <p class="preview__line"><strong>Сумма ДКП:</strong> <span id="previewSummaDkp">—</span></p>
           <p class="preview__line"><strong>К оплате:</strong> <span id="previewTotal">0 ₽</span></p>
         </div>
       </section>

@@ -358,6 +358,49 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
 }
 
+.form-section__sub {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.form-section__sub-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.form-grid--dkp {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.field--plate {
+  display: flex;
+  align-items: flex-end;
+}
+
+.plate-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.plate-option .toggle-label {
+  margin-bottom: 0;
+}
+
+.plate-option__qty {
+  flex-shrink: 0;
+}
+
+.field__select--sm {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+  min-width: 120px;
+}
+
 .field--full {
   grid-column: 1 / -1;
 }

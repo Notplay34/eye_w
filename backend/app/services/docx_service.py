@@ -35,7 +35,8 @@ PLACEHOLDER_TO_FIELD = {
     "Гос. Номер": "plate_number",
     "ПТС": "pts",
     "Сумма ДКП": "summa_dkp",
-    "Дата ДКП": None,  # подставим дату отдельно
+    "Дата ДКП": "dkp_date",
+    "Номер договора": "dkp_number",
 }
 
 
@@ -46,10 +47,9 @@ def _form_data_to_replace_map(form_data: Optional[dict], doc_date: Optional[date
     doc_date = doc_date or date.today()
     result = {}
     for placeholder, field_key in PLACEHOLDER_TO_FIELD.items():
-        if field_key is None:
-            result[placeholder] = doc_date.strftime("%d.%m.%Y")
-            continue
-        value = form_data.get(field_key)
+        value = form_data.get(field_key) if field_key else None
+        if value is None and placeholder == "Дата ДКП":
+            value = doc_date.strftime("%d.%m.%Y")
         if value is None:
             value = ""
         result[placeholder] = str(value)

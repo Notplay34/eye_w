@@ -95,7 +95,9 @@ async def pay_order(
     await db.flush()
     logger.info("Оплата принята по заказу id=%s", order.id)
     if order.need_plate:
-        await notify_plate_operators_new_order(db, order.id, order.public_id, order.total_amount)
+        plate_qty = (order.form_data or {}).get("plate_quantity")
+        plate_qty = int(plate_qty) if plate_qty is not None else 1
+        await notify_plate_operators_new_order(db, order.id, order.public_id, order.total_amount, plate_qty)
     return PayOrderResponse(
         order_id=order.id,
         public_id=order.public_id,
