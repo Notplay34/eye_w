@@ -54,6 +54,26 @@ DEVELOPMENT_LOG.md используется для:
 
 ---
 
+### [2025-02-14] — Перенос шаблонов в templates/, удаление dist
+
+**Тип изменения:** Refactor
+
+**Описание:**  
+Шаблоны docx из dist/main/templates скопированы в папку templates/ в корне проекта. Папка dist удалена. В PROJECT_CONTEXT (раздел 13) указано, что шаблоны хранятся в templates/.
+
+**Причина:**  
+Отказ от артефакта старого приложения (dist); сохранение только нужных шаблонов для будущей генерации документов на бэкенде.
+
+**Затронутые файлы:**  
+- templates/ (новые: akt_pp.docx, DKP.docx, dkp_dar.docx, dkp_pieces.docx, doverennost.docx, mreo.docx, number.docx, prokuratura.docx, zaiavlenie.docx)
+- PROJECT_CONTEXT.md
+- dist/ (удалён)
+
+**Связь с PROJECT_CONTEXT.md:**  
+Раздел 13 — уточнено расположение шаблонов.
+
+---
+
 ### [2025-02-14] — Виртуальное окружение, .gitignore и правило Git-коммитов
 
 **Тип изменения:** Architecture
