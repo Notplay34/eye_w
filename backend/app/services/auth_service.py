@@ -29,7 +29,7 @@ def create_access_token(
     now = datetime.utcnow()
     expire = now + timedelta(minutes=settings.jwt_expire_minutes)
     payload = {
-        "sub": subject,
+        "sub": str(subject),
         "role": role,
         "name": name,
         "login": login,

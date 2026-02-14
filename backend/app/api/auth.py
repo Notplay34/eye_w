@@ -46,8 +46,9 @@ async def get_current_user(
     if not payload or "sub" not in payload:
         logger.warning("auth/me: токен не прошёл проверку (неверный или истёк)")
         return None
+    sub = payload["sub"]
     return UserInfo(
-        id=payload["sub"],
+        id=int(sub) if isinstance(sub, str) else sub,
         name=payload.get("name", ""),
         role=payload.get("role", ""),
         login=payload.get("login", ""),
