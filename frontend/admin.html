@@ -39,7 +39,8 @@
     .admin .detail-grid dd { margin: 0 0 0 1rem; }
     .admin .btn-sm { padding: 0.35rem 0.6rem; font-size: 0.85rem; }
     .admin .price-list-table input { width: 100%; padding: 0.4rem 0.5rem; font-size: 0.9rem; }
-    .admin .price-list-table input[readonly] { background: var(--surface2); color: var(--text-muted); }
+    .admin .price-list-table .price-list-remove { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+    .admin .price-list-add-row { margin-top: 0.5rem; }
   </style>
 </head>
 <body>
@@ -78,9 +79,13 @@
 
     <section id="sectionPriceList">
       <h2>Прейскурант</h2>
-      <p class="text-muted" style="margin-bottom:0.75rem;">Измените название и цену документа. Сохранённый прейскурант используется в форме заказа.</p>
+      <p class="text-muted" style="margin-bottom:0.75rem;">Меняйте название и цену, добавляйте и удаляйте позиции. Сохранённый прейскурант используется в форме заказа.</p>
       <div id="priceListContent" class="loading">Загрузка…</div>
-      <p style="margin-top:0.75rem;"><button type="button" class="btn" id="btnSavePriceList">Сохранить прейскурант</button> <span id="priceListMessage" class="text-muted"></span></p>
+      <p style="margin-top:0.75rem;">
+        <button type="button" class="btn" id="btnAddPriceRow">Добавить позицию</button>
+        <button type="button" class="btn" id="btnSavePriceList">Сохранить прейскурант</button>
+        <span id="priceListMessage" class="text-muted"></span>
+      </p>
     </section>
   </div>
 
@@ -244,35 +249,70 @@
         }
       }
 
+      function priceListRowHtml(item) {
+        var t = (item.template || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        var lab = (item.label || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+        var pr = item.price != null ? Number(item.price) : 0;
+        return '<tr><td><input type="text" value="' + t + '" data-field="template" placeholder="файл.docx"></td><td><input type="text" value="' + lab + '" data-field="label" placeholder="Название"></td><td><input type="number" min="0" step="1" value="' + pr + '" data-field="price" placeholder="0"></td><td><button type="button" class="btn btn-sm price-list-remove">Удалить</button></td></tr>';
+      }
+      function bindPriceListEvents() {
+        if (!priceListEl) return;
+        priceListEl.querySelectorAll('.price-list-remove').forEach(function (btn) {
+          btn.onclick = function () { var tr = btn.closest('tr'); if (tr) tr.remove(); };
+        });
+      }
+      function renderPriceListTable(list) {
+        var isArray = Array.isArray(list);
+        if (!priceListEl) return;
+        if (isArray && list.length === 0) {
+          priceListEl.innerHTML = '<table class="price-list-table"><thead><tr><th>Шаблон</th><th>Название</th><th>Цена, ₽</th><th></th></tr></thead><tbody></tbody></table>';
+        } else {
+          var rows = (isArray ? list : []).map(priceListRowHtml).join('');
+          priceListEl.innerHTML = '<table class="price-list-table"><thead><tr><th>Шаблон</th><th>Название</th><th>Цена, ₽</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+        }
+        bindPriceListEvents();
+      }
+      function addPriceRow() {
+        if (!priceListEl) return;
+        var tbody = priceListEl.querySelector('tbody');
+        if (!tbody) {
+          renderPriceListTable([]);
+          tbody = priceListEl.querySelector('tbody');
+        }
+        if (tbody) {
+          var tr = document.createElement('tr');
+          tr.innerHTML = '<td><input type="text" data-field="template" placeholder="файл.docx"></td><td><input type="text" data-field="label" placeholder="Название"></td><td><input type="number" min="0" step="1" value="0" data-field="price"></td><td><button type="button" class="btn btn-sm price-list-remove">Удалить</button></td>';
+          tbody.appendChild(tr);
+          bindPriceListEvents();
+        }
+      }
       async function loadPriceList() {
         if (!priceListEl) return;
         try {
           var r = await fetchApi(API_BASE + '/price-list');
-          if (!r.ok) throw new Error(r.statusText);
           var text = await r.text();
-          if (text.trim().charAt(0) === '<') throw new Error('Сервер вернул страницу вместо данных. Проверьте nginx: location /price-list должен проксироваться на бэкенд.');
-          var list;
-          try { list = JSON.parse(text); } catch (parseErr) { throw new Error('Ответ не JSON. Проверьте проксирование /price-list на бэкенд.'); }
-          if (!Array.isArray(list) || !list.length) {
-            priceListEl.innerHTML = '<p class="text-muted">Прейскурант пуст.</p>';
+          if (text.trim().charAt(0) === '<') {
+            priceListEl.innerHTML = '<p class="error">Сервер вернул страницу вместо данных.</p><p class="text-muted" style="font-size:0.85rem; margin-top:0.5rem;">На сервере в nginx добавьте в конфиг (внутри server { ... }):<br><code style="display:block; margin-top:0.25rem;">location /price-list { proxy_pass http://127.0.0.1:8000; proxy_set_header Host $host; proxy_set_header Authorization $http_authorization; }</code> Затем: <code>nginx -t &amp;&amp; systemctl reload nginx</code></p><p style="margin-top:0.75rem;">Можно добавить позиции вручную и нажать «Сохранить» после исправления nginx.</p><table class="price-list-table"><thead><tr><th>Шаблон</th><th>Название</th><th>Цена, ₽</th><th></th></tr></thead><tbody></tbody></table>';
+            bindPriceListEvents();
             return;
           }
-          priceListEl.innerHTML = '<table class="price-list-table"><thead><tr><th>Шаблон</th><th>Название</th><th>Цена, ₽</th></tr></thead><tbody>' +
-            list.map(function (item, i) {
-              var t = (item.template || '').replace(/"/g, '&quot;');
-              var lab = (item.label || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-              var pr = item.price != null ? Number(item.price) : 0;
-              return '<tr data-index="' + i + '"><td><input type="text" value="' + t + '" readonly data-field="template"></td><td><input type="text" value="' + lab + '" data-field="label" placeholder="Название"></td><td><input type="number" min="0" step="1" value="' + pr + '" data-field="price" placeholder="0"></td></tr>';
-            }).join('') +
-            '</tbody></table>';
+          if (!r.ok) throw new Error(r.statusText);
+          var list;
+          try { list = JSON.parse(text); } catch (parseErr) { throw new Error('Ответ не JSON.'); }
+          if (!Array.isArray(list)) list = [];
+          renderPriceListTable(list.length ? list : []);
         } catch (e) {
-          priceListEl.innerHTML = '<span class="error">' + (e.message || 'Ошибка загрузки') + '</span>';
+          priceListEl.innerHTML = '<p class="error">' + (e.message || 'Ошибка загрузки') + '</p><table class="price-list-table"><thead><tr><th>Шаблон</th><th>Название</th><th>Цена, ₽</th><th></th></tr></thead><tbody></tbody></table>';
+          bindPriceListEvents();
         }
       }
 
       async function savePriceList() {
         var rows = priceListEl && priceListEl.querySelectorAll('tbody tr');
-        if (!rows || !rows.length) return;
+        if (!rows || !rows.length) {
+          alert('Добавьте хотя бы одну позицию (кнопка «Добавить позицию»).');
+          return;
+        }
         var items = [];
         for (var i = 0; i < rows.length; i++) {
           var r = rows[i];
@@ -280,7 +320,13 @@
           var label = r.querySelector('input[data-field="label"]');
           var price = r.querySelector('input[data-field="price"]');
           if (!template || !label || !price) continue;
-          items.push({ template: template.value.trim(), label: label.value.trim(), price: Math.max(0, parseFloat(price.value) || 0), sort_order: i });
+          var t = template.value.trim();
+          if (!t) continue;
+          items.push({ template: t, label: label.value.trim(), price: Math.max(0, parseFloat(price.value) || 0), sort_order: items.length });
+        }
+        if (!items.length) {
+          alert('Заполните шаблон (имя файла, например zaiavlenie.docx) у каждой позиции.');
+          return;
         }
         if (priceListMessage) priceListMessage.textContent = 'Сохранение…';
         try {
@@ -315,6 +361,7 @@
 
       document.getElementById('btnRefresh').addEventListener('click', refresh);
       if (document.getElementById('btnSavePriceList')) document.getElementById('btnSavePriceList').addEventListener('click', savePriceList);
+      if (document.getElementById('btnAddPriceRow')) document.getElementById('btnAddPriceRow').addEventListener('click', addPriceRow);
       refresh();
     })();
   </script>
