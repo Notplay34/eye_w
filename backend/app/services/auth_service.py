@@ -6,7 +6,10 @@ import bcrypt
 import jwt
 
 from app.config import settings
+from app.core.logging_config import get_logger
 from app.models.employee import EmployeeRole
+
+logger = get_logger(__name__)
 
 
 def hash_password(password: str) -> str:
@@ -47,5 +50,6 @@ def decode_token(token: str) -> Optional[dict]:
             settings.jwt_secret,
             algorithms=[settings.jwt_algorithm],
         )
-    except jwt.PyJWTError:
+    except jwt.PyJWTError as e:
+        logger.warning("JWT decode failed: %s", str(e))
         return None
