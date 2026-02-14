@@ -54,6 +54,25 @@ DEVELOPMENT_LOG.md используется для:
 
 ---
 
+### [2025-02-14] — Этапы 1–3 плана: бэкенд, заказы/оплата, связка с frontend
+
+**Тип изменения:** Feature
+
+**Описание:**  
+Реализованы этапы 1–3 плана разработки. **Этап 1:** структура backend (FastAPI, SQLAlchemy async, PostgreSQL), конфиг и database.py, модели Employee, Order, Payment, Plate, запуск API с CORS и /health, создание таблиц при старте. **Этап 2:** схемы Pydantic для заказа (OrderCreate, OrderResponse), POST /orders (расчёт сумм, сохранение), валидация переходов статусов (order_status.py), POST /orders/{id}/pay (запись в payments, статус PAID), GET /orders и GET /orders/{id}, PATCH /orders/{id}/status. **Этап 3:** в frontend добавлены API_BASE_URL (localhost:8000), отправка формы на POST /orders и POST /orders/{id}/pay по кнопке «Принять наличные», обработка ошибок (alert), GET /employees и выбор оператора (select, employee_id в заказе). Добавлен роутер /employees (GET, POST).
+
+**Причина:**  
+Выполнение плана по DEVELOPMENT_PLAN.md.
+
+**Затронутые файлы:**  
+- backend/ (новые: app/main.py, config.py, core/database.py, models/, api/orders.py, api/employees.py, schemas/, services/order_service.py, services/order_status.py, requirements.txt)
+- frontend/index.html, frontend/app.js, frontend/styles.css
+
+**Связь с PROJECT_CONTEXT.md:**  
+Разделы 2, 4, 5, 8, 9, 10, 13.
+
+---
+
 ### [2025-02-14] — План разработки (DEVELOPMENT_PLAN.md)
 
 **Тип изменения:** Architecture

@@ -1,0 +1,55 @@
+from decimal import Decimal
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models import Order, OrderStatus
+from app.schemas.order import OrderCreate
+
+
+def _form_data_from_create(d: OrderCreate) -> dict:
+    return {
+        "client_fio": d.client_fio,
+        "client_passport": d.client_passport,
+        "client_address": d.client_address,
+        "client_phone": d.client_phone,
+        "client_comment": d.client_comment,
+        "seller_fio": d.seller_fio,
+        "seller_passport": d.seller_passport,
+        "seller_address": d.seller_address,
+        "vin": d.vin,
+        "brand_model": d.brand_model,
+        "vehicle_type": d.vehicle_type,
+        "year": d.year,
+        "engine": d.engine,
+        "chassis": d.chassis,
+        "body": d.body,
+        "color": d.color,
+        "srts": d.srts,
+        "plate_number": d.plate_number,
+        "pts": d.pts,
+        "summa_dkp": str(d.summa_dkp),
+    }
+
+
+async def create_order(db: AsyncSession, data: OrderCreate) -> Order:
+    state_duty = data.state_duty
+    income_p1 = data.extra_amount + (data.plate_amount if data.need_plate else Decimal("0"))
+    income_p2 = Decimal("0")
+    total = state_duty + income_p1 + income_p2
+
+    order = Order(
+        status=OrderStatus.AWAITING_PAYMENT,
+        total_amount=total,
+        state_duty_amount=state_duty,
+        income_pavilion1=income_p1,
+        income_pavilion2=income_p2,
+        need_plate=data.need_plate,
+        service_type=data.service_type,
+        form_data=_form_data_from_create(data),
+        employee_id=data.employee_id,
+    )
+    db.add(order)
+    await db.flush()
+    await db.refresh(order)
+    return order

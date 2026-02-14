@@ -5,6 +5,8 @@
  */
 
 (function () {
+  const API_BASE_URL = window.API_BASE_URL || 'http://localhost:8000';
+
   const SERVICE_LABELS = {
     mreo: 'МРЭО (постановка/снятие)',
     dkp: 'ДКП',
@@ -187,28 +189,119 @@
     inputs.needPlate.addEventListener('change', togglePlateAmount);
   }
 
-  function acceptCash() {
+  function buildOrderPayload() {
+    const employeeId = parseInt(localStorage.getItem('pavilion_operator_id') || '', 10);
+    return {
+      client_fio: (inputs.clientFio && inputs.clientFio.value.trim()) || null,
+      client_passport: (inputs.clientPassport && inputs.clientPassport.value.trim()) || null,
+      client_address: (inputs.clientAddress && inputs.clientAddress.value.trim()) || null,
+      client_phone: (inputs.clientPhone && inputs.clientPhone.value.trim()) || null,
+      client_comment: (inputs.clientComment && inputs.clientComment.value.trim()) || null,
+      seller_fio: (inputs.sellerFio && inputs.sellerFio.value.trim()) || null,
+      seller_passport: (inputs.sellerPassport && inputs.sellerPassport.value.trim()) || null,
+      seller_address: (inputs.sellerAddress && inputs.sellerAddress.value.trim()) || null,
+      vin: (inputs.vin && inputs.vin.value.trim()) || null,
+      brand_model: (inputs.brandModel && inputs.brandModel.value.trim()) || null,
+      vehicle_type: (inputs.vehicleType && inputs.vehicleType.value.trim()) || null,
+      year: (inputs.year && inputs.year.value.trim()) || null,
+      engine: (inputs.engine && inputs.engine.value.trim()) || null,
+      chassis: (inputs.chassis && inputs.chassis.value.trim()) || null,
+      body: (inputs.body && inputs.body.value.trim()) || null,
+      color: (inputs.color && inputs.color.value.trim()) || null,
+      srts: (inputs.srts && inputs.srts.value.trim()) || null,
+      plate_number: (inputs.plateNumber && inputs.plateNumber.value.trim()) || null,
+      pts: (inputs.pts && inputs.pts.value.trim()) || null,
+      service_type: (inputs.serviceType && inputs.serviceType.value) || null,
+      need_plate: inputs.needPlate.value === 'yes',
+      state_duty: getStateDuty(),
+      extra_amount: getExtraAmount(),
+      plate_amount: getPlateAmount(),
+      summa_dkp: inputs.summaDkp ? num(inputs.summaDkp.value) : 0,
+      employee_id: Number.isInteger(employeeId) ? employeeId : null
+    };
+  }
+
+  function showError(msg) {
+    alert('Ошибка: ' + msg);
+  }
+
+  async function acceptCash() {
     const total = getTotal();
     if (total <= 0) return;
-
-    const orderId = 'ORD-' + Date.now();
-    orderIdDisplay.textContent = 'Заказ: ' + orderId;
-    orderIdDisplay.style.fontWeight = '600';
-
     btnAcceptCash.disabled = true;
-    btnAcceptCash.textContent = 'Оплата принята';
+    btnAcceptCash.textContent = 'Отправка…';
 
-    // Здесь потом будет вызов API: POST /orders, POST /payments
-    console.log('Order created:', orderId, { total, stateDuty: getStateDuty(), income: getIncome() });
+    try {
+      const resOrder = await fetch(API_BASE_URL + '/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildOrderPayload())
+      });
+      if (!resOrder.ok) {
+        const err = await resOrder.json().catch(() => ({ detail: resOrder.statusText }));
+        throw new Error(err.detail || JSON.stringify(err));
+      }
+      const order = await resOrder.json();
+
+      const resPay = await fetch(API_BASE_URL + '/orders/' + order.id + '/pay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (!resPay.ok) {
+        const err = await resPay.json().catch(() => ({ detail: resPay.statusText }));
+        throw new Error(err.detail || JSON.stringify(err));
+      }
+
+      orderIdDisplay.textContent = 'Заказ: ' + (order.public_id || order.id);
+      orderIdDisplay.style.fontWeight = '600';
+      btnAcceptCash.textContent = 'Оплата принята';
+    } catch (e) {
+      btnAcceptCash.disabled = false;
+      btnAcceptCash.textContent = 'Принять наличные';
+      showError(e.message || 'Не удалось создать заказ');
+    }
   }
 
   function doPrint() {
     window.print();
   }
 
+  const operatorSelect = el('operatorSelect');
+
+  async function loadEmployees() {
+    try {
+      const res = await fetch(API_BASE_URL + '/employees');
+      if (!res.ok) return;
+      const list = await res.json();
+      if (!operatorSelect) return;
+      list.forEach(function (emp) {
+        const opt = document.createElement('option');
+        opt.value = emp.id;
+        opt.textContent = emp.name;
+        operatorSelect.appendChild(opt);
+      });
+      const savedId = localStorage.getItem('pavilion_operator_id');
+      if (savedId) {
+        operatorSelect.value = savedId;
+        const sel = operatorSelect.options[operatorSelect.selectedIndex];
+        if (operatorName) operatorName.textContent = sel ? sel.textContent : '—';
+      }
+    } catch (_) {}
+  }
+
   function initOperator() {
     const name = localStorage.getItem('pavilion_operator_name') || '';
-    operatorName.textContent = name || '—';
+    if (operatorName) operatorName.textContent = name || '—';
+    loadEmployees();
+    if (operatorSelect) {
+      operatorSelect.addEventListener('change', function () {
+        const id = operatorSelect.value;
+        if (id) localStorage.setItem('pavilion_operator_id', id);
+        else localStorage.removeItem('pavilion_operator_id');
+        const sel = operatorSelect.options[operatorSelect.selectedIndex];
+        if (operatorName) operatorName.textContent = sel ? sel.textContent : '—';
+      });
+    }
   }
 
   function setOperator() {
@@ -216,7 +309,7 @@
     if (name != null) {
       const trimmed = String(name).trim();
       localStorage.setItem('pavilion_operator_name', trimmed);
-      operatorName.textContent = trimmed || '—';
+      if (operatorName) operatorName.textContent = trimmed || '—';
     }
   }
 

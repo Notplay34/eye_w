@@ -94,6 +94,16 @@ body {
   color: var(--text-muted);
 }
 
+.header__operator-select {
+  margin-right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface2);
+  color: var(--text);
+}
+
 .header__operator-btn:hover {
   color: var(--accent);
   border-color: var(--accent);
