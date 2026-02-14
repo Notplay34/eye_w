@@ -169,9 +169,16 @@
             </div>
           </div>
           <div class="form-section__sub form-section__sub--dkp-single">
-            <div class="field">
-              <label class="field__label" for="dkpSummary">ДКП</label>
-              <input type="text" id="dkpSummary" class="field__input field__input--readonly" placeholder="указывается в блоке «Продавец (для ДКП)»" readonly>
+            <div class="field field--dkp-row">
+              <label class="toggle-label">
+                <input type="checkbox" id="dkpPullFromSeller" class="toggle-label__input" autocomplete="off" checked>
+                <span class="toggle-label__box"></span>
+                <span class="toggle-label__text">Подтянуть из «Продавец»</span>
+              </label>
+              <div class="field field--grow">
+                <label class="field__label" for="dkpSummary">ДКП</label>
+                <input type="text" id="dkpSummary" class="field__input" placeholder="вручную или подтянется из блока «Продавец»">
+              </div>
             </div>
           </div>
         </fieldset>

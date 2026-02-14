@@ -33,6 +33,7 @@ def _form_data_from_create(d: OrderCreate) -> dict:
         "pts": d.pts,
         "dkp_date": d.dkp_date,
         "dkp_number": d.dkp_number,
+        "dkp_summary": d.dkp_summary,
         "summa_dkp": str(d.summa_dkp),
         "plate_quantity": d.plate_quantity,
     }

@@ -195,7 +195,7 @@
           html += '<p><strong>Создан:</strong> ' + (d.created_at ? new Date(d.created_at).toLocaleString('ru') : '') + '</p>';
           if (d.form_data && Object.keys(d.form_data).length) {
             html += '<h4 style="margin:1rem 0 0.5rem;">Данные заказа</h4><dl class="detail-grid">';
-            var labels = { client_fio: 'Клиент (ФИО)', client_passport: 'Паспорт', client_phone: 'Телефон', seller_fio: 'Продавец (ФИО)', seller_passport: 'Паспорт продавца', seller_address: 'Адрес продавца', trustee_fio: 'Доверенное лицо (ФИО)', trustee_passport: 'Паспорт доверенного', trustee_basis: 'По доверенности от', vin: 'VIN', brand_model: 'Марка/модель', year: 'Год', color: 'Цвет', dkp_date: 'Дата договора ДКП', dkp_number: 'Номер договора ДКП', summa_dkp: 'Сумма ДКП', plate_quantity: 'Кол-во номеров', service_type: 'Услуга', documents: 'Документы' };
+            var labels = { client_fio: 'Клиент (ФИО)', client_passport: 'Паспорт', client_phone: 'Телефон', seller_fio: 'Продавец (ФИО)', seller_passport: 'Паспорт продавца', seller_address: 'Адрес продавца', trustee_fio: 'Доверенное лицо (ФИО)', trustee_passport: 'Паспорт доверенного', trustee_basis: 'По доверенности от', vin: 'VIN', brand_model: 'Марка/модель', year: 'Год', color: 'Цвет', dkp_date: 'Дата договора ДКП', dkp_number: 'Номер договора ДКП', dkp_summary: 'ДКП (вручную)', summa_dkp: 'Сумма ДКП', plate_quantity: 'Кол-во номеров', service_type: 'Услуга', documents: 'Документы' };
             for (var k in d.form_data) {
               var v = d.form_data[k];
               if (v == null || v === '') continue;

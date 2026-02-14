@@ -41,6 +41,7 @@
     dkpDate: el('dkpDate'),
     summaDkp: el('summaDkp'),
     dkpNumber: el('dkpNumber'),
+    dkpPullFromSeller: el('dkpPullFromSeller'),
     dkpSummary: el('dkpSummary'),
     stateDuty: el('stateDuty'),
     needPlate: el('needPlate'),
@@ -96,9 +97,11 @@
   }
 
   function renderDocumentsList() {
-    if (documentsEmpty) documentsEmpty.style.display = selectedDocuments.length ? 'none' : 'block';
+    var forPayment = selectedDocuments.filter(function (d) { return !isPlateZaiavlenie(d); });
+    if (documentsEmpty) documentsEmpty.style.display = forPayment.length ? 'none' : 'block';
     if (!documentsList) return;
     documentsList.innerHTML = selectedDocuments.map(function (d, i) {
+      if (isPlateZaiavlenie(d)) return '';
       return '<li class="documents-to-print__item">' +
         '<span class="documents-to-print__item-info">' +
           '<span>' + (d.label || d.template) + '</span>' +
@@ -106,7 +109,7 @@
         '</span>' +
         '<button type="button" class="documents-to-print__item-remove" data-index="' + i + '">Удалить</button>' +
       '</li>';
-    }).join('');
+    }).filter(Boolean).join('');
     documentsList.querySelectorAll('.documents-to-print__item-remove').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var idx = parseInt(btn.getAttribute('data-index'), 10);
@@ -148,7 +151,13 @@
     if (inputs.summaDkp && num(inputs.summaDkp.value) > 0) dkpParts.push(formatMoney(num(inputs.summaDkp.value)));
     if (inputs.dkpNumber && inputs.dkpNumber.value.trim()) dkpParts.push('№ ' + inputs.dkpNumber.value.trim());
     var dkpStr = dkpParts.length ? dkpParts.join(', ') : '—';
-    if (inputs.dkpSummary) inputs.dkpSummary.value = dkpStr !== '—' ? dkpStr : '';
+    var pullDkp = inputs.dkpPullFromSeller && inputs.dkpPullFromSeller.checked;
+    if (inputs.dkpSummary) {
+      inputs.dkpSummary.readOnly = !!pullDkp;
+      inputs.dkpSummary.classList.toggle('field__input--readonly', !!pullDkp);
+      if (pullDkp) inputs.dkpSummary.value = dkpStr !== '—' ? dkpStr : '';
+    }
+    if (preview.previewDkp) preview.previewDkp.textContent = pullDkp ? dkpStr : (inputs.dkpSummary && inputs.dkpSummary.value.trim()) || '—';
     var docLabels = selectedDocuments.length ? selectedDocuments.map(function (d) { return d.label || d.template; }).join(', ') : '—';
     if (preview.previewFio) preview.previewFio.textContent = fio;
     if (preview.previewPassport) preview.previewPassport.textContent = passport;
@@ -157,7 +166,6 @@
     if (preview.previewSeller) preview.previewSeller.textContent = seller;
     if (preview.previewTrustee) preview.previewTrustee.textContent = trustee;
     if (preview.previewVehicle) preview.previewVehicle.textContent = vehicle;
-    if (preview.previewDkp) preview.previewDkp.textContent = dkpStr;
     if (preview.previewService) preview.previewService.textContent = docLabels;
     if (preview.previewTotal) preview.previewTotal.textContent = formatMoney(getTotal());
   }
@@ -221,15 +229,16 @@
       srts: (inputs.srts && inputs.srts.value.trim()) || null,
       plate_number: (inputs.plateNumber && inputs.plateNumber.value.trim()) || null,
       pts: (inputs.pts && inputs.pts.value.trim()) || null,
-      dkp_date: (inputs.dkpDate && inputs.dkpDate.value.trim()) || null,
-      dkp_number: (inputs.dkpNumber && inputs.dkpNumber.value.trim()) || null,
+      dkp_date: (inputs.dkpPullFromSeller && inputs.dkpPullFromSeller.checked && inputs.dkpDate && inputs.dkpDate.value.trim()) ? inputs.dkpDate.value.trim() : null,
+      dkp_number: (inputs.dkpPullFromSeller && inputs.dkpPullFromSeller.checked && inputs.dkpNumber && inputs.dkpNumber.value.trim()) ? inputs.dkpNumber.value.trim() : null,
+      dkp_summary: (inputs.dkpPullFromSeller && !inputs.dkpPullFromSeller.checked && inputs.dkpSummary && inputs.dkpSummary.value.trim()) ? inputs.dkpSummary.value.trim() : null,
       service_type: selectedDocuments[0] ? selectedDocuments[0].template : null,
       need_plate: needPlate,
       plate_quantity: plateQuantity,
       state_duty: getStateDuty(),
       extra_amount: 0,
       plate_amount: 0,
-      summa_dkp: inputs.summaDkp ? num(inputs.summaDkp.value) : 0,
+      summa_dkp: (inputs.dkpPullFromSeller && inputs.dkpPullFromSeller.checked && inputs.summaDkp) ? num(inputs.summaDkp.value) : 0,
       employee_id: employeeId || null,
       documents: selectedDocuments.map(function (d) {
         return { template: d.template, price: num(d.price), label: d.label || d.template };

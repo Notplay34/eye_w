@@ -375,8 +375,16 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 
-.form-section__sub--dkp-single .field {
-  max-width: 480px;
+.form-section__sub--dkp-single .field--dkp-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.form-section__sub--dkp-single .field--dkp-row .field--grow {
+  flex: 1;
+  min-width: 200px;
 }
 
 .field__input--readonly {
