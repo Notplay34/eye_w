@@ -255,6 +255,7 @@
       orderIdDisplay.textContent = 'Заказ: ' + (order.public_id || order.id);
       orderIdDisplay.style.fontWeight = '600';
       btnAcceptCash.textContent = 'Оплата принята';
+      window.lastOrderId = order.id;
     } catch (e) {
       btnAcceptCash.disabled = false;
       btnAcceptCash.textContent = 'Принять наличные';
@@ -263,7 +264,23 @@
   }
 
   function doPrint() {
-    window.print();
+    const orderId = window.lastOrderId;
+    if (!orderId) {
+      alert('Сначала примите оплату по заказу (кнопка «Принять наличные»).');
+      return;
+    }
+    const serviceKey = inputs.serviceType.value;
+    const withPlate = inputs.needPlate.value === 'yes';
+    if (!serviceKey) {
+      alert('Выберите тип услуги.');
+      return;
+    }
+    const docs = [...(SERVICE_DOCS[serviceKey] || [])];
+    if (withPlate) docs.push('number.docx');
+    docs.forEach(function (docName) {
+      const url = API_BASE_URL + '/orders/' + orderId + '/documents/' + encodeURIComponent(docName);
+      window.open(url, '_blank', 'noopener');
+    });
   }
 
   const operatorSelect = el('operatorSelect');

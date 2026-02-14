@@ -3,6 +3,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.logging_config import get_logger
+
+logger = get_logger(__name__)
 from app.models import Order, OrderStatus, Payment, PaymentType
 from pydantic import BaseModel
 
@@ -22,6 +25,7 @@ async def _get_order(db: AsyncSession, order_id: int) -> Order | None:
 @router.post("", response_model=OrderResponse)
 async def post_order(data: OrderCreate, db: AsyncSession = Depends(get_db)):
     order = await create_order(db, data)
+    logger.info("Создан заказ id=%s public_id=%s", order.id, order.public_id)
     return OrderResponse(
         id=order.id,
         public_id=order.public_id,
@@ -80,6 +84,7 @@ async def pay_order(
     order.status = OrderStatus.PAID
     db.add(order)
     await db.flush()
+    logger.info("Оплата принята по заказу id=%s", order.id)
     return PayOrderResponse(
         order_id=order.id,
         public_id=order.public_id,
