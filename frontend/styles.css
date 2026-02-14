@@ -249,6 +249,103 @@ body {
   padding-bottom: 0;
 }
 
+/* Секции с чекбоксом: по клику раскрываются поля */
+.form-section--togglable {
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface2);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.form-section--togglable .form-section__toggle {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.form-section--togglable .form-section__toggle:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.form-section--togglable .form-section__body {
+  padding: 0 1rem 1rem;
+  overflow: hidden;
+  transition: max-height 0.25s ease-out, opacity 0.2s, padding 0.2s;
+  max-height: 500px;
+  opacity: 1;
+}
+
+.form-section--togglable .form-section__body--closed {
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  margin: 0;
+}
+
+.form-section--togglable .form-section__body .form-grid {
+  margin-bottom: 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Красивый чекбокс-переключатель */
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.toggle-label__input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-label__box {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+
+.toggle-label__input:focus-visible + .toggle-label__box {
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+.toggle-label__input:checked + .toggle-label__box {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.toggle-label__input:checked + .toggle-label__box::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.toggle-label__text {
+  flex: 1;
+}
+
 .form-section__title {
   font-family: var(--font-serif);
   font-size: 1rem;

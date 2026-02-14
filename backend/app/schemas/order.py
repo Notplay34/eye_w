@@ -20,6 +20,9 @@ class OrderCreate(BaseModel):
     seller_fio: Optional[str] = None
     seller_passport: Optional[str] = None
     seller_address: Optional[str] = None
+    trustee_fio: Optional[str] = None
+    trustee_passport: Optional[str] = None
+    trustee_basis: Optional[str] = None
     vin: Optional[str] = None
     brand_model: Optional[str] = None
     vehicle_type: Optional[str] = None

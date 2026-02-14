@@ -18,6 +18,7 @@ ALLOWED_TEMPLATES = [
     "doverennost.docx",
     "mreo.docx",
     "number.docx",
+    "obiasnenie.docx",
     "prokuratura.docx",
     "zaiavlenie.docx",
 ]

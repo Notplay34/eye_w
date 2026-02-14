@@ -51,20 +51,54 @@
           </div>
         </fieldset>
 
-        <fieldset class="form-section">
-          <legend class="form-section__title">Продавец (для ДКП)</legend>
-          <div class="form-grid">
-            <div class="field">
-              <label class="field__label" for="sellerFio">ФИО продавец</label>
-              <input type="text" id="sellerFio" class="field__input" placeholder="ФИО продавца" autocomplete="off">
+        <fieldset class="form-section form-section--togglable" id="sectionSeller">
+          <div class="form-section__toggle">
+            <label class="toggle-label">
+              <input type="checkbox" id="hasSeller" class="toggle-label__input" autocomplete="off">
+              <span class="toggle-label__box"></span>
+              <span class="toggle-label__text">Продавец (для ДКП)</span>
+            </label>
+          </div>
+          <div class="form-section__body form-section__body--closed" id="sellerBody">
+            <div class="form-grid">
+              <div class="field">
+                <label class="field__label" for="sellerFio">ФИО продавца</label>
+                <input type="text" id="sellerFio" class="field__input" placeholder="Иванов Иван Иванович" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field__label" for="sellerPassport">Паспорт</label>
+                <input type="text" id="sellerPassport" class="field__input" placeholder="серия номер" autocomplete="off">
+              </div>
+              <div class="field field--full">
+                <label class="field__label" for="sellerAddress">Адрес</label>
+                <input type="text" id="sellerAddress" class="field__input" placeholder="адрес регистрации" autocomplete="off">
+              </div>
             </div>
-            <div class="field">
-              <label class="field__label" for="sellerPassport">Паспорт продавец</label>
-              <input type="text" id="sellerPassport" class="field__input" placeholder="серия номер" autocomplete="off">
-            </div>
-            <div class="field field--full">
-              <label class="field__label" for="sellerAddress">Адрес продавец</label>
-              <input type="text" id="sellerAddress" class="field__input" placeholder="адрес" autocomplete="off">
+          </div>
+        </fieldset>
+
+        <fieldset class="form-section form-section--togglable" id="sectionTrustee">
+          <div class="form-section__toggle">
+            <label class="toggle-label">
+              <input type="checkbox" id="hasTrustee" class="toggle-label__input" autocomplete="off">
+              <span class="toggle-label__box"></span>
+              <span class="toggle-label__text">Доверенное лицо (действует по доверенности)</span>
+            </label>
+          </div>
+          <div class="form-section__body form-section__body--closed" id="trusteeBody">
+            <div class="form-grid">
+              <div class="field">
+                <label class="field__label" for="trusteeFio">ФИО доверенного лица</label>
+                <input type="text" id="trusteeFio" class="field__input" placeholder="ФИО" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field__label" for="trusteePassport">Паспорт</label>
+                <input type="text" id="trusteePassport" class="field__input" placeholder="серия номер" autocomplete="off">
+              </div>
+              <div class="field field--full">
+                <label class="field__label" for="trusteeBasis">По доверенности от (дата, номер)</label>
+                <input type="text" id="trusteeBasis" class="field__input" placeholder="например: № 123 от 01.01.2024" autocomplete="off">
+              </div>
             </div>
           </div>
         </fieldset>
@@ -185,6 +219,7 @@
           <p class="preview__line"><strong>Адрес:</strong> <span id="previewAddress">—</span></p>
           <p class="preview__line"><strong>Телефон:</strong> <span id="previewPhone">—</span></p>
           <p class="preview__line"><strong>Продавец:</strong> <span id="previewSeller">—</span></p>
+          <p class="preview__line"><strong>Доверенное лицо:</strong> <span id="previewTrustee">—</span></p>
           <p class="preview__line"><strong>VIN / Марка:</strong> <span id="previewVehicle">—</span></p>
           <p class="preview__line"><strong>Документы:</strong> <span id="previewService">—</span></p>
           <p class="preview__line"><strong>Сумма ДКП:</strong> <span id="previewSummaDkp">—</span></p>

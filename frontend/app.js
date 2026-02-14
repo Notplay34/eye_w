@@ -19,9 +19,14 @@
     clientAddress: el('clientAddress'),
     clientPhone: el('clientPhone'),
     clientComment: el('clientComment'),
+    hasSeller: el('hasSeller'),
     sellerFio: el('sellerFio'),
     sellerPassport: el('sellerPassport'),
     sellerAddress: el('sellerAddress'),
+    hasTrustee: el('hasTrustee'),
+    trusteeFio: el('trusteeFio'),
+    trusteePassport: el('trusteePassport'),
+    trusteeBasis: el('trusteeBasis'),
     vin: el('vin'),
     brandModel: el('brandModel'),
     vehicleType: el('vehicleType'),
@@ -53,6 +58,7 @@
     previewAddress: el('previewAddress'),
     previewPhone: el('previewPhone'),
     previewSeller: el('previewSeller'),
+    previewTrustee: el('previewTrustee'),
     previewVehicle: el('previewVehicle'),
     previewService: el('previewService'),
     previewSummaDkp: el('previewSummaDkp'),
@@ -123,7 +129,14 @@
     var passport = (inputs.clientPassport && inputs.clientPassport.value.trim()) || '—';
     var address = (inputs.clientAddress && inputs.clientAddress.value.trim()) || '—';
     var phone = (inputs.clientPhone && inputs.clientPhone.value.trim()) || '—';
-    var seller = (inputs.sellerFio && inputs.sellerFio.value.trim()) ? [inputs.sellerFio.value.trim(), inputs.sellerPassport && inputs.sellerPassport.value.trim(), inputs.sellerAddress && inputs.sellerAddress.value.trim()].filter(Boolean).join(', ') : '—';
+    var seller = '—';
+    if (inputs.hasSeller && inputs.hasSeller.checked && inputs.sellerFio && inputs.sellerFio.value.trim()) {
+      seller = [inputs.sellerFio.value.trim(), inputs.sellerPassport && inputs.sellerPassport.value.trim(), inputs.sellerAddress && inputs.sellerAddress.value.trim()].filter(Boolean).join(', ');
+    }
+    var trustee = '—';
+    if (inputs.hasTrustee && inputs.hasTrustee.checked && inputs.trusteeFio && inputs.trusteeFio.value.trim()) {
+      trustee = [inputs.trusteeFio.value.trim(), inputs.trusteePassport && inputs.trusteePassport.value.trim(), inputs.trusteeBasis && inputs.trusteeBasis.value.trim()].filter(Boolean).join(' · ');
+    }
     var vehicle = (inputs.vin && inputs.vin.value.trim()) || (inputs.brandModel && inputs.brandModel.value.trim()) ? [inputs.vin && inputs.vin.value.trim(), inputs.brandModel && inputs.brandModel.value.trim()].filter(Boolean).join(' · ') : '—';
     var docLabels = selectedDocuments.length ? selectedDocuments.map(function (d) { return d.label || d.template; }).join(', ') : '—';
     var summaDkpVal = (inputs.summaDkp && num(inputs.summaDkp.value) > 0) ? formatMoney(num(inputs.summaDkp.value)) : '—';
@@ -132,6 +145,7 @@
     if (preview.previewAddress) preview.previewAddress.textContent = address;
     if (preview.previewPhone) preview.previewPhone.textContent = phone;
     if (preview.previewSeller) preview.previewSeller.textContent = seller;
+    if (preview.previewTrustee) preview.previewTrustee.textContent = trustee;
     if (preview.previewVehicle) preview.previewVehicle.textContent = vehicle;
     if (preview.previewService) preview.previewService.textContent = docLabels;
     if (preview.previewSummaDkp) preview.previewSummaDkp.textContent = summaDkpVal;
@@ -179,9 +193,12 @@
       client_address: (inputs.clientAddress && inputs.clientAddress.value.trim()) || null,
       client_phone: (inputs.clientPhone && inputs.clientPhone.value.trim()) || null,
       client_comment: (inputs.clientComment && inputs.clientComment.value.trim()) || null,
-      seller_fio: (inputs.sellerFio && inputs.sellerFio.value.trim()) || null,
-      seller_passport: (inputs.sellerPassport && inputs.sellerPassport.value.trim()) || null,
-      seller_address: (inputs.sellerAddress && inputs.sellerAddress.value.trim()) || null,
+      seller_fio: (inputs.hasSeller && inputs.hasSeller.checked && inputs.sellerFio && inputs.sellerFio.value.trim()) ? inputs.sellerFio.value.trim() : null,
+      seller_passport: (inputs.hasSeller && inputs.hasSeller.checked && inputs.sellerPassport && inputs.sellerPassport.value.trim()) ? inputs.sellerPassport.value.trim() : null,
+      seller_address: (inputs.hasSeller && inputs.hasSeller.checked && inputs.sellerAddress && inputs.sellerAddress.value.trim()) ? inputs.sellerAddress.value.trim() : null,
+      trustee_fio: (inputs.hasTrustee && inputs.hasTrustee.checked && inputs.trusteeFio && inputs.trusteeFio.value.trim()) ? inputs.trusteeFio.value.trim() : null,
+      trustee_passport: (inputs.hasTrustee && inputs.hasTrustee.checked && inputs.trusteePassport && inputs.trusteePassport.value.trim()) ? inputs.trusteePassport.value.trim() : null,
+      trustee_basis: (inputs.hasTrustee && inputs.hasTrustee.checked && inputs.trusteeBasis && inputs.trusteeBasis.value.trim()) ? inputs.trusteeBasis.value.trim() : null,
       vin: (inputs.vin && inputs.vin.value.trim()) || null,
       brand_model: (inputs.brandModel && inputs.brandModel.value.trim()) || null,
       vehicle_type: (inputs.vehicleType && inputs.vehicleType.value.trim()) || null,
@@ -306,9 +323,27 @@
     }
   }
 
+  function setupTogglableSections() {
+    var sellerBody = el('sellerBody');
+    var trusteeBody = el('trusteeBody');
+    if (inputs.hasSeller && sellerBody) {
+      sellerBody.classList.toggle('form-section__body--closed', !inputs.hasSeller.checked);
+      inputs.hasSeller.addEventListener('change', function () {
+        sellerBody.classList.toggle('form-section__body--closed', !inputs.hasSeller.checked);
+      });
+    }
+    if (inputs.hasTrustee && trusteeBody) {
+      trusteeBody.classList.toggle('form-section__body--closed', !inputs.hasTrustee.checked);
+      inputs.hasTrustee.addEventListener('change', function () {
+        trusteeBody.classList.toggle('form-section__body--closed', !inputs.hasTrustee.checked);
+      });
+    }
+  }
+
   async function init() {
     await loadPriceList();
     bindInputs();
+    setupTogglableSections();
     renderDocumentsList();
     syncFromMainForm();
     updateTime();
