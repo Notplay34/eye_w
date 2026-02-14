@@ -91,3 +91,22 @@ async def update_employee(
     await db.commit()
     await db.refresh(emp)
     return _emp_to_response(emp)
+
+
+@router.delete("/{employee_id}", response_model=EmployeeResponse)
+async def deactivate_employee(
+    employee_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserInfo = Depends(RequireAdmin),
+):
+    """Деактивировать сотрудника (мягкое удаление — is_active=false)."""
+    if employee_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Нельзя деактивировать себя")
+    result = await db.execute(select(Employee).where(Employee.id == employee_id))
+    emp = result.scalar_one_or_none()
+    if not emp:
+        raise HTTPException(status_code=404, detail="Сотрудник не найден")
+    emp.is_active = False
+    await db.commit()
+    await db.refresh(emp)
+    return _emp_to_response(emp)

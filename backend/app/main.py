@@ -7,13 +7,15 @@ from sqlalchemy import select, text
 
 from app.core.database import engine, Base, async_session_maker
 from app.core.logging_config import setup_logging, get_logger
-from app.models import Employee
+from app.models import DocumentPrice, Employee
 from app.models.employee import EmployeeRole
+from app.data.price_list import PRICE_LIST as DEFAULT_PRICE_LIST
 from app.api.orders import router as orders_router
 from app.api.employees import router as employees_router
 from app.api.documents import router as documents_router
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
+from app.api.price_list import router as price_list_router
 from app.services.auth_service import hash_password
 
 setup_logging()
@@ -65,6 +67,24 @@ async def ensure_superuser():
         logger.info("Создан суперпользователь: %s", SUPERUSER_LOGIN)
 
 
+async def seed_document_prices():
+    """Заполнить прейскурант из дефолтного списка, если таблица пуста."""
+    async with async_session_maker() as session:
+        r = await session.execute(select(DocumentPrice).limit(1))
+        if r.scalar_one_or_none() is not None:
+            return
+        for i, item in enumerate(DEFAULT_PRICE_LIST):
+            row = DocumentPrice(
+                template=item["template"],
+                label=item["label"],
+                price=item["price"],
+                sort_order=i,
+            )
+            session.add(row)
+        await session.commit()
+        logger.info("Прейскурант заполнен из дефолтного списка (%s позиций)", len(DEFAULT_PRICE_LIST))
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
@@ -78,6 +98,10 @@ async def lifespan(app: FastAPI):
         await ensure_superuser()
     except Exception as e:
         logger.warning("Суперпользователь: %s", e)
+    try:
+        await seed_document_prices()
+    except Exception as e:
+        logger.warning("Прейскурант: %s", e)
     yield
     await engine.dispose()
 
@@ -104,6 +128,7 @@ app.add_middleware(
 
 app.include_router(orders_router)
 app.include_router(documents_router)
+app.include_router(price_list_router)
 app.include_router(analytics_router)
 app.include_router(auth_router)
 app.include_router(employees_router)

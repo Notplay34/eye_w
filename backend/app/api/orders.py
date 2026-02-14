@@ -6,13 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.logging_config import get_logger
-from app.api.auth import RequireFormAccess, UserInfo
+from app.api.auth import RequireFormAccess, RequireAnalyticsAccess, UserInfo
 
 logger = get_logger(__name__)
-from app.models import Order, OrderStatus, Payment, PaymentType
+from app.models import Order, OrderStatus, Payment, PaymentType, Employee
 from pydantic import BaseModel
 
-from app.schemas.order import OrderCreate, OrderResponse
+from app.schemas.order import OrderCreate, OrderResponse, OrderDetailResponse
 from app.schemas.payment import PayOrderResponse
 from app.services.order_service import create_order
 from app.services.order_status import can_transition
@@ -152,6 +152,36 @@ async def get_order(
         need_plate=order.need_plate,
         service_type=order.service_type,
         created_at=order.created_at.isoformat() if order.created_at else "",
+    )
+
+
+@router.get("/{order_id}/detail", response_model=OrderDetailResponse)
+async def get_order_detail(
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequireAnalyticsAccess),
+):
+    """Детали заказа для админки: form_data и кто оформил."""
+    order = await _get_order(db, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ не найден")
+    created_by_name = None
+    if order.employee_id:
+        r = await db.execute(select(Employee.name).where(Employee.id == order.employee_id))
+        created_by_name = r.scalar_one_or_none()
+    return OrderDetailResponse(
+        id=order.id,
+        public_id=order.public_id,
+        status=order.status.value,
+        total_amount=order.total_amount,
+        state_duty_amount=order.state_duty_amount,
+        income_pavilion1=order.income_pavilion1,
+        income_pavilion2=order.income_pavilion2,
+        need_plate=order.need_plate,
+        service_type=order.service_type,
+        created_at=order.created_at.isoformat() if order.created_at else "",
+        form_data=order.form_data,
+        created_by_name=created_by_name,
     )
 
 

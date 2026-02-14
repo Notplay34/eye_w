@@ -1,6 +1,13 @@
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field
+
+
+class DocumentItem(BaseModel):
+    """Элемент прейскуранта: документ для печати и его цена."""
+    template: str
+    price: Decimal = Field(..., ge=0)
+    label: Optional[str] = None
 
 
 class OrderCreate(BaseModel):
@@ -31,6 +38,8 @@ class OrderCreate(BaseModel):
     plate_amount: Decimal = Field(default=Decimal("0"), ge=0)
     summa_dkp: Decimal = Field(default=Decimal("0"), ge=0)
     employee_id: Optional[int] = None
+    # Список документов для печати (прейскурант): сумма по ним считается автоматически
+    documents: Optional[List[DocumentItem]] = None
 
 
 class OrderResponse(BaseModel):
@@ -47,3 +56,9 @@ class OrderResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class OrderDetailResponse(OrderResponse):
+    """Заказ с деталями для админки: form_data и кто оформил."""
+    form_data: Optional[dict] = None
+    created_by_name: Optional[str] = None

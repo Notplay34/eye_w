@@ -120,29 +120,20 @@
         </fieldset>
 
         <fieldset class="form-section">
-          <legend class="form-section__title">Услуга и оплата</legend>
-          <div class="form-row">
+          <legend class="form-section__title">Документы и оплата</legend>
+          <div class="form-row form-row--add-doc">
             <div class="field">
-              <label class="field__label" for="serviceType">Тип услуги</label>
-              <select id="serviceType" class="field__select">
-                <option value="">Выберите услугу</option>
-                <option value="mreo">МРЭО (постановка/снятие)</option>
-                <option value="dkp">ДКП</option>
-                <option value="dkp_dar">ДКП дарение</option>
-                <option value="dkp_pieces">ДКП запчасти</option>
-                <option value="doverennost">Доверенность</option>
-                <option value="zaiavlenie">Заявление</option>
-                <option value="akt_pp">Акт приёма-передачи</option>
-                <option value="prokuratura">Прокуратура</option>
+              <label class="field__label" for="docSelect">Добавить документ</label>
+              <select id="docSelect" class="field__select">
+                <option value="">Выберите документ из списка</option>
+                <!-- заполняется из прейскуранта -->
               </select>
             </div>
-            <div class="field">
-              <label class="field__label" for="needPlate">Номерной знак</label>
-              <select id="needPlate" class="field__select">
-                <option value="no">Не нужен</option>
-                <option value="yes">Изготовить номер</option>
-              </select>
-            </div>
+            <button type="button" class="btn btn--add-doc" id="btnAddDoc">Добавить</button>
+          </div>
+          <div class="documents-to-print" id="documentsToPrint">
+            <p class="documents-to-print__empty" id="documentsEmpty">Документов пока нет — выберите и нажмите «Добавить»</p>
+            <ul class="documents-to-print__list" id="documentsList"></ul>
           </div>
           <div class="form-row amounts">
             <div class="field">
@@ -150,16 +141,8 @@
               <input type="number" id="stateDuty" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
             </div>
             <div class="field">
-              <label class="field__label" for="extraAmount">Доп. услуги, ₽</label>
-              <input type="number" id="extraAmount" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
-            </div>
-            <div class="field">
-              <label class="field__label" for="plateAmount">Номер (если есть), ₽</label>
-              <input type="number" id="plateAmount" class="field__input field__input--number" min="0" step="1" value="0" placeholder="0">
-            </div>
-            <div class="field">
               <label class="field__label" for="summaDkp">Сумма ДКП, ₽</label>
-              <input type="number" id="summaDkp" class="field__input field__input--number" min="0" step="1" value="0" placeholder="стоимость по договору">
+              <input type="number" id="summaDkp" class="field__input field__input--number" min="0" step="1" value="0" placeholder="для текста договора">
             </div>
           </div>
         </fieldset>
@@ -203,18 +186,17 @@
           <p class="preview__line"><strong>Телефон:</strong> <span id="previewPhone">—</span></p>
           <p class="preview__line"><strong>Продавец:</strong> <span id="previewSeller">—</span></p>
           <p class="preview__line"><strong>VIN / Марка:</strong> <span id="previewVehicle">—</span></p>
-          <p class="preview__line"><strong>Услуга:</strong> <span id="previewService">—</span></p>
-          <p class="preview__line"><strong>Номер:</strong> <span id="previewPlate">Не нужен</span></p>
+          <p class="preview__line"><strong>Документы:</strong> <span id="previewService">—</span></p>
           <p class="preview__line"><strong>Сумма ДКП:</strong> <span id="previewSummaDkp">—</span></p>
           <p class="preview__line"><strong>К оплате:</strong> <span id="previewTotal">0 ₽</span></p>
         </div>
       </section>
 
-      <!-- Список документов для печати (подставляются по типу услуги) -->
+      <!-- Список документов для печати = выбранные в блоке «Документы и оплата» -->
       <section class="card card--docs" id="docsCard">
         <h2 class="card__title">Документы для печати</h2>
         <ul class="doc-list" id="docList">
-          <li class="doc-list__item doc-list__item--placeholder">Выберите тип услуги — список заполнится автоматически</li>
+          <li class="doc-list__item doc-list__item--placeholder">Добавьте документы выше — здесь будет тот же список</li>
         </ul>
       </section>
     </main>

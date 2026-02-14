@@ -15,6 +15,7 @@
     .users th { color: var(--text-muted); font-weight: 500; }
     .users .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.85rem; }
     .users .error { color: #b91c1c; }
+    .users .text-muted { color: var(--text-muted); font-size: 0.85rem; }
     .users .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 10; }
     .users .modal.show { display: flex; }
     .users .modal__box { background: var(--surface); padding: 1.5rem; border-radius: var(--radius); min-width: 320px; max-width: 100%; }
@@ -22,7 +23,12 @@
     .users .modal__box label { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
     .users .modal__box input, .users .modal__box select { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; box-sizing: border-box; }
     .users .modal__box .row { display: flex; gap: 0.5rem; margin-top: 1rem; }
-    .users .inactive { opacity: 0.6; }
+    .users .inactive { opacity: 0.65; }
+    .users .table-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .users .copy-link { cursor: pointer; color: var(--accent); font-size: 0.85rem; }
+    .users .copy-link:hover { text-decoration: underline; }
+    .users .btn-danger { background: #dc2626; color: #fff; border-color: #dc2626; }
+    .users .btn-danger:hover { background: #b91c1c; }
   </style>
 </head>
 <body>
@@ -42,7 +48,7 @@
         <input type="text" id="formName" required>
         <label>Логин (для входа в систему)</label>
         <input type="text" id="formLogin" autocomplete="off">
-        <label>Пароль <span id="formPasswordHint">(оставьте пустым, чтобы не менять)</span></label>
+        <label>Пароль <span id="formPasswordHint" class="text-muted">(для нового — обязательно; при редактировании оставьте пустым, чтобы не менять)</span></label>
         <input type="password" id="formPassword" autocomplete="new-password">
         <label>Роль</label>
         <select id="formRole">
@@ -89,13 +95,37 @@
             listEl.innerHTML = '<p class="text-muted">Нет сотрудников. Нажмите «Добавить сотрудника».</p>';
             return;
           }
+          var myId = user ? user.id : null;
           var rows = list.map(function (e) {
             var tr = e.is_active ? '' : ' class="inactive"';
-            return '<tr' + tr + '><td>' + e.id + '</td><td>' + (e.name || '') + '</td><td>' + (e.login || '—') + '</td><td>' + roleLabel(e.role) + '</td><td>' + (e.is_active ? 'Да' : 'Нет') + '</td><td><button type="button" class="btn btn-sm btn-edit" data-id="' + e.id + '">Изменить</button></td></tr>';
+            var loginCell = (e.login ? '<span class="copy-link" data-login="' + (e.login || '').replace(/"/g, '&quot;') + '" title="Копировать логин">' + e.login + '</span>' : '—');
+            var actions = '<div class="table-actions">';
+            actions += '<button type="button" class="btn btn-sm btn-edit" data-id="' + e.id + '">Изменить</button>';
+            if (e.is_active && e.id !== myId) {
+              actions += '<button type="button" class="btn btn-sm btn-danger btn-deactivate" data-id="' + e.id + '" data-name="' + (e.name || '').replace(/"/g, '&quot;') + '">Деактивировать</button>';
+            }
+            if (!e.is_active) {
+              actions += '<button type="button" class="btn btn-sm btn-restore" data-id="' + e.id + '">Восстановить</button>';
+            }
+            actions += '</div>';
+            return '<tr' + tr + '><td>' + e.id + '</td><td>' + (e.name || '') + '</td><td>' + loginCell + '</td><td>' + roleLabel(e.role) + '</td><td>' + (e.is_active ? 'Да' : 'Нет') + '</td><td>' + actions + '</td></tr>';
           }).join('');
-          listEl.innerHTML = '<table><thead><tr><th>ID</th><th>Имя</th><th>Логин</th><th>Роль</th><th>Активен</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
+          listEl.innerHTML = '<table class="users-table"><thead><tr><th>ID</th><th>Имя</th><th>Логин</th><th>Роль</th><th>Активен</th><th>Действия</th></tr></thead><tbody>' + rows + '</tbody></table>';
           listEl.querySelectorAll('.btn-edit').forEach(function (btn) {
             btn.addEventListener('click', function () { openEdit(Number(btn.getAttribute('data-id'))); });
+          });
+          listEl.querySelectorAll('.btn-deactivate').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              var id = Number(btn.getAttribute('data-id'));
+              var name = btn.getAttribute('data-name') || '';
+              if (confirm('Деактивировать «' + name + '»? Он не сможет войти в систему.')) deactivate(id);
+            });
+          });
+          listEl.querySelectorAll('.btn-restore').forEach(function (btn) {
+            btn.addEventListener('click', function () { restore(Number(btn.getAttribute('data-id'))); });
+          });
+          listEl.querySelectorAll('.copy-link').forEach(function (el) {
+            el.addEventListener('click', function () { copyLogin(el.getAttribute('data-login')); });
           });
         }).catch(function (err) {
           listEl.innerHTML = '<p class="error">' + (err.message || 'Ошибка загрузки') + '</p>';
@@ -136,6 +166,39 @@
 
       function closeModal() {
         modal.classList.remove('show');
+      }
+
+      function copyLogin(login) {
+        if (!login) return;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(login).then(function () { alert('Логин скопирован'); }).catch(function () { fallbackCopy(login); });
+        } else { fallbackCopy(login); }
+      }
+      function fallbackCopy(text) {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert('Логин скопирован');
+      }
+
+      function deactivate(id) {
+        fetchApi(API + '/employees/' + id, { method: 'DELETE' }).then(function (r) {
+          if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+          loadList();
+        }).catch(function (err) { alert(err.message); });
+      }
+      function restore(id) {
+        fetchApi(API + '/employees/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_active: true })
+        }).then(function (r) {
+          if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+          loadList();
+        }).catch(function (err) { alert(err.message); });
       }
 
       form.addEventListener('submit', function (e) {
