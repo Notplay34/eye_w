@@ -30,6 +30,8 @@
     .cash-table tfoot .col-num { text-align: right; }
     .cash-msg { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; }
     .cash-msg.err { color: #b91c1c; }
+    .cash-table tr.day-sep td { background: var(--surface2); font-weight: 600; padding: 0.5rem 0.75rem; border-top: 2px solid var(--border); border-bottom: 1px solid var(--border); color: var(--text); }
+    .cash-table tr.day-sep td { border-left: none; border-right: none; }
   </style>
 </head>
 <body>
@@ -217,6 +219,22 @@
     return tr;
   }
 
+  function dayKey(row) {
+    var s = row.created_at;
+    if (!s) return '';
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return '';
+    var y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+    return y + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+  }
+
+  function dayLabel(key) {
+    if (!key) return '';
+    var parts = key.split('-');
+    if (parts.length !== 3) return key;
+    return parts[2] + '.' + parts[1] + '.' + parts[0];
+  }
+
   function renderTotal() {
     var total = rows.reduce(function (sum, r) { return sum + numVal(r.total); }, 0);
     var el = document.getElementById('cashTotalCell');
@@ -233,7 +251,16 @@
       renderTotal();
       return;
     }
+    var lastDay = null;
     rows.forEach(function (row) {
+      var d = dayKey(row);
+      if (d && d !== lastDay) {
+        lastDay = d;
+        var sep = document.createElement('tr');
+        sep.className = 'day-sep';
+        sep.innerHTML = '<td colspan="8">' + dayLabel(d) + '</td>';
+        tbody.appendChild(sep);
+      }
       tbody.appendChild(renderRow(row));
     });
     renderTotal();

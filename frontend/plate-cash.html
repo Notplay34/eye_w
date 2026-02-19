@@ -29,6 +29,8 @@
     .nav-links a:hover { text-decoration: underline; }
     .plate-cash-msg { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; }
     .plate-cash-msg.err { color: #b91c1c; }
+    .plate-cash-table tr.day-sep td { background: var(--surface2); font-weight: 600; padding: 0.5rem 0.75rem; border-top: 2px solid var(--border); border-bottom: 1px solid var(--border); color: var(--text); }
+    .plate-cash-table tr.day-sep td { border-left: none; border-right: none; }
   </style>
 </head>
 <body>
@@ -123,6 +125,22 @@
     }
   }
 
+  function dayKey(row) {
+    var s = row.created_at;
+    if (!s) return '';
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return '';
+    var y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
+    return y + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
+  }
+
+  function dayLabel(key) {
+    if (!key) return '';
+    var parts = key.split('-');
+    if (parts.length !== 3) return key;
+    return parts[2] + '.' + parts[1] + '.' + parts[0];
+  }
+
   function renderTotal() {
     var total = rows.reduce(function (sum, r) { return sum + numVal(r.amount); }, 0);
     var cell = document.getElementById('totalCell');
@@ -202,7 +220,16 @@
       tr.innerHTML = '<td colspan="3" class="plate-cash-msg">Нет строк. Нажмите «Добавить строку». Сумма может быть отрицательной (изъятие из кассы).</td>';
       tbody.appendChild(tr);
     } else {
+      var lastDay = null;
       rows.forEach(function (row) {
+        var d = dayKey(row);
+        if (d && d !== lastDay) {
+          lastDay = d;
+          var sep = document.createElement('tr');
+          sep.className = 'day-sep';
+          sep.innerHTML = '<td colspan="3">' + dayLabel(d) + '</td>';
+          tbody.appendChild(sep);
+        }
         tbody.appendChild(renderRow(row));
       });
     }

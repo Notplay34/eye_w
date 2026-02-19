@@ -156,6 +156,7 @@ async def close_shift(
 def _cash_row_to_dict(row: CashRow) -> dict:
     return {
         "id": row.id,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
         "client_name": row.client_name or "",
         "application": float(row.application),
         "state_duty": float(row.state_duty),
@@ -173,7 +174,7 @@ async def list_cash_rows(
     user: UserInfo = Depends(RequireCashAccess),
 ):
     """Список строк таблицы кассы (последние сверху)."""
-    q = select(CashRow).order_by(CashRow.id.desc()).limit(limit)
+    q = select(CashRow).order_by(CashRow.created_at.desc()).limit(limit)
     r = await db.execute(q)
     rows = r.scalars().all()
     return [_cash_row_to_dict(row) for row in rows]
@@ -259,7 +260,12 @@ class PlateCashRowUpdate(BaseModel):
 
 
 def _plate_row_to_dict(row: PlateCashRow) -> dict:
-    return {"id": row.id, "client_name": row.client_name or "", "amount": float(row.amount)}
+    return {
+        "id": row.id,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "client_name": row.client_name or "",
+        "amount": float(row.amount),
+    }
 
 
 @router.get("/plate-rows")
@@ -269,7 +275,7 @@ async def list_plate_cash_rows(
     user: UserInfo = Depends(RequirePlateAccess),
 ):
     """Список строк кассы номеров (последние сверху)."""
-    q = select(PlateCashRow).order_by(PlateCashRow.id.desc()).limit(limit)
+    q = select(PlateCashRow).order_by(PlateCashRow.created_at.desc()).limit(limit)
     r = await db.execute(q)
     rows = r.scalars().all()
     total = sum(float(row.amount) for row in rows)

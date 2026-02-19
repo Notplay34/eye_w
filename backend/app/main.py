@@ -80,6 +80,7 @@ async def ensure_columns_and_enum():
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS cash_rows (
                 id SERIAL PRIMARY KEY,
+                created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
                 client_name VARCHAR(255) NOT NULL DEFAULT '',
                 application NUMERIC(12,2) NOT NULL DEFAULT 0,
                 state_duty NUMERIC(12,2) NOT NULL DEFAULT 0,
@@ -89,13 +90,30 @@ async def ensure_columns_and_enum():
                 total NUMERIC(12,2) NOT NULL DEFAULT 0
             );
         """))
+        await conn.execute(text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='cash_rows' AND column_name='created_at') THEN
+                    ALTER TABLE cash_rows ADD COLUMN created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc');
+                END IF;
+            END $$;
+        """))
         # Касса номеров: фамилия и сумма (сумма может быть отрицательной)
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS plate_cash_rows (
                 id SERIAL PRIMARY KEY,
+                created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
                 client_name VARCHAR(255) NOT NULL DEFAULT '',
                 amount NUMERIC(12,2) NOT NULL DEFAULT 0
             );
+        """))
+        await conn.execute(text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='plate_cash_rows' AND column_name='created_at') THEN
+                    ALTER TABLE plate_cash_rows ADD COLUMN created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc');
+                END IF;
+            END $$;
         """))
     try:
         async with engine.connect() as conn:
