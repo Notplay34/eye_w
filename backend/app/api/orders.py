@@ -9,7 +9,7 @@ from app.core.logging_config import get_logger
 from app.api.auth import RequireFormAccess, RequireAnalyticsAccess, RequireOrdersListAccess, RequirePlateAccess, UserInfo
 
 logger = get_logger(__name__)
-from app.models import Order, OrderStatus, Payment, PaymentType, Employee
+from app.models import Order, OrderStatus, Payment, PaymentType, Employee, CashShift, ShiftStatus
 from pydantic import BaseModel
 
 from app.schemas.order import OrderCreate, OrderResponse, OrderDetailResponse
@@ -23,6 +23,18 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 async def _get_order(db: AsyncSession, order_id: int) -> Optional[Order]:
     result = await db.execute(select(Order).where(Order.id == order_id))
     return result.scalar_one_or_none()
+
+
+async def _current_shift_id(db: AsyncSession, pavilion: int) -> Optional[int]:
+    """Текущая открытая смена по павильону (1 или 2). Возвращает id смены или None."""
+    q = (
+        select(CashShift.id)
+        .where(CashShift.pavilion == pavilion, CashShift.status == ShiftStatus.OPEN)
+        .order_by(CashShift.opened_at.desc())
+        .limit(1)
+    )
+    r = await db.execute(q)
+    return r.scalar_one_or_none()
 
 
 @router.post("", response_model=OrderResponse)
@@ -63,6 +75,8 @@ async def pay_order(
             detail=f"Нельзя принять оплату для заказа со статусом {order.status.value}",
         )
     emp_id = employee_id if employee_id is not None else user.id
+    shift_1 = await _current_shift_id(db, 1)
+    shift_2 = await _current_shift_id(db, 2)
     if order.state_duty_amount > 0:
         db.add(
             Payment(
@@ -70,6 +84,7 @@ async def pay_order(
                 amount=order.state_duty_amount,
                 type=PaymentType.STATE_DUTY,
                 employee_id=emp_id,
+                shift_id=shift_1,
             )
         )
     if order.income_pavilion1 > 0:
@@ -79,6 +94,7 @@ async def pay_order(
                 amount=order.income_pavilion1,
                 type=PaymentType.INCOME_PAVILION1,
                 employee_id=emp_id,
+                shift_id=shift_1,
             )
         )
     if order.income_pavilion2 > 0:
@@ -88,6 +104,7 @@ async def pay_order(
                 amount=order.income_pavilion2,
                 type=PaymentType.INCOME_PAVILION2,
                 employee_id=emp_id,
+                shift_id=shift_2,
             )
         )
     order.status = OrderStatus.PAID
@@ -267,12 +284,14 @@ async def pay_extra(
         raise HTTPException(status_code=404, detail="Заказ не найден")
     if not order.need_plate:
         raise HTTPException(status_code=400, detail="У заказа нет номера для доплаты")
+    shift_2 = await _current_shift_id(db, 2)
     db.add(
         Payment(
             order_id=order.id,
             amount=body.amount,
             type=PaymentType.INCOME_PAVILION2,
             employee_id=_user.id,
+            shift_id=shift_2,
         )
     )
     await db.flush()

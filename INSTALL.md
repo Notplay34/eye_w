@@ -45,10 +45,19 @@ apt update && apt install -y python3.11 python3.11-venv python3-pip postgresql n
 
 ### Шаг 3. Создать базу данных
 
+**Важно:** база должна быть с кодировкой **UTF-8**, иначе при сохранении заказов с русским текстом будет ошибка «conversion between UTF8 and SQL_ASCII is not supported».
+
 ```bash
-sudo -u postgres psql -c "CREATE USER eye_user WITH PASSWORD 'eye_pass';"
-sudo -u postgres psql -c "CREATE DATABASE eye_w OWNER eye_user;"
+su - postgres
+psql -c "CREATE USER eye_user WITH PASSWORD 'eye_pass';"
+psql -c "CREATE DATABASE eye_w OWNER eye_user ENCODING 'UTF8' LC_COLLATE='C.UTF-8' LC_CTYPE='C.UTF-8' TEMPLATE=template0;"
+exit
 ```
+
+Если появится ошибка «locale C.UTF-8 does not exist», создайте базу так:  
+`psql -c "CREATE DATABASE eye_w OWNER eye_user ENCODING 'UTF8' TEMPLATE=template0;"`
+
+(Если `sudo` есть: `sudo -u postgres psql -c "..."` вместо входа в `su - postgres`.)
 
 Пароль `eye_pass` можно заменить на свой — тогда его нужно будет указать в следующем шаге.
 
@@ -171,9 +180,22 @@ nginx -t && systemctl reload nginx
 - Проверьте пароль в `DATABASE_URL` в `backend/.env`.
 
 **«Внутренняя ошибка сервера» при нажатии «Принять наличные»:**
-- Касса в системе не нужна — платёж пишется в БД. Ошибка чаще всего из‑за схемы БД или прав.
-- На сервере посмотрите лог: `journalctl -u eye_w --no-pager -n 50` — в конце будет текст ошибки (например, нет колонки `public_id`).
-- После обновления кода выполните `systemctl restart eye_w` — при старте недостающие колонки в таблицах добавляются автоматически.
+- Касса в системе не нужна — платёж пишется в БД. Смотрите лог: `journalctl -u eye_w --no-pager -n 50`.
+- **«conversion between UTF8 and SQL_ASCII is not supported»** — база создана без UTF-8. Пересоздайте БД с кодировкой UTF-8 (см. ниже «Пересоздание БД с UTF-8»).
+- Другие ошибки: после обновления кода выполните `systemctl restart eye_w` — при старте недостающие колонки добавляются автоматически.
+
+**Пересоздание БД с UTF-8** (если была ошибка SQL_ASCII):
+
+```bash
+su - postgres
+psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'eye_w' AND pid <> pg_backend_pid();"
+psql -c "DROP DATABASE eye_w;"
+psql -c "CREATE DATABASE eye_w OWNER eye_user ENCODING 'UTF8' LC_COLLATE='C.UTF-8' LC_CTYPE='C.UTF-8' TEMPLATE=template0;"
+exit
+systemctl restart eye_w
+```
+
+После этого зайдите на сайт снова (логин sergey151 / 1wq21wq2 создастся заново). Старые заказы в БД пропадут.
 
 ---
 

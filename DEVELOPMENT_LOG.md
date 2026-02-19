@@ -54,6 +54,34 @@ DEVELOPMENT_LOG.md используется для:
 
 ---
 
+### [2025-02-18] — Касса и смены по павильонам
+
+**Тип изменения:** Feature, Database
+
+**Описание:**  
+Реализована фича «касса и смены»: открытие и закрытие смен по павильонам 1 и 2. Модель `CashShift` (павильон, открыта/закрыта кем и когда, начальный и конечный остаток, статус OPEN/CLOSED). В таблицу `payments` добавлено поле `shift_id` — при приёме оплаты (форма документов и доплата за номера) платёж привязывается к текущей открытой смене соответствующего павильона (госпошлина и павильон 1 → смена павильона 1; павильон 2 → смена павильона 2). API: POST `/cash/shifts` (открыть), PATCH `/cash/shifts/{id}/close` (закрыть), GET `/cash/shifts/current?pavilion=1|2` (текущая смена и сумма по ней), GET `/cash/shifts` (список смен). Права: павильон 1 — оператор/менеджер/админ, павильон 2 — оператор изготовления/менеджер/админ; введена зависимость `RequireCashAccess`. Фронт: страница «Касса и смены» (`cash-shifts.html`) — открыть смену (начальный остаток), закрыть смену (ввод посчитанной суммы), отображение текущей смены и суммы по смене. Ссылка в меню для ролей с доступом к кассе. В nginx добавлен `location /cash`.
+
+**Причина:**  
+Учёт по сменам и остаткам в кассе по павильонам (v1.1, по RELEASE_PLAN).
+
+**Затронутые файлы:**  
+- backend/app/models/cash_shift.py (новый)
+- backend/app/models/payment.py (поле shift_id, связь shift)
+- backend/app/models/__init__.py (экспорт CashShift, ShiftStatus)
+- backend/app/schemas/cash.py (новый)
+- backend/app/api/cash.py (новый)
+- backend/app/api/auth.py (RequireCashAccess)
+- backend/app/api/orders.py (привязка shift_id при pay и pay_extra)
+- backend/app/main.py (миграция cash_shifts, shift_id в payments; роутер cash_router)
+- frontend/cash-shifts.html (новый)
+- frontend/account.html (ссылка «Касса и смены»)
+- deploy/nginx-eye_w.conf (location /cash)
+
+**Связь с PROJECT_CONTEXT.md:**  
+Фича «Кассы и смены» из плана v1.1.
+
+---
+
 ### [2025-02-18] — Релиз 1.0
 
 **Тип изменения:** Improvement

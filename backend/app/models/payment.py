@@ -22,7 +22,9 @@ class Payment(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     type: Mapped[PaymentType] = mapped_column(Enum(PaymentType), nullable=False)
     employee_id: Mapped[Optional[int]] = mapped_column(ForeignKey("employees.id"), nullable=True)
+    shift_id: Mapped[Optional[int]] = mapped_column(ForeignKey("cash_shifts.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     order = relationship("Order", back_populates="payments")
     employee = relationship("Employee", back_populates="payments")
+    shift = relationship("CashShift", backref="payments")

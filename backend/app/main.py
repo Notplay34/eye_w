@@ -15,6 +15,7 @@ from app.api.employees import router as employees_router
 from app.api.documents import router as documents_router
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
+from app.api.cash import router as cash_router
 from app.api.price_list import router as price_list_router
 from app.services.auth_service import hash_password
 
@@ -49,6 +50,29 @@ async def ensure_columns_and_enum():
                     UPDATE orders SET public_id = gen_random_uuid()::text WHERE public_id IS NULL;
                     ALTER TABLE orders ALTER COLUMN public_id SET NOT NULL;
                     CREATE UNIQUE INDEX IF NOT EXISTS ix_orders_public_id ON orders (public_id);
+                END IF;
+            END $$;
+        """))
+        # Таблица cash_shifts (кассы и смены)
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS cash_shifts (
+                id SERIAL PRIMARY KEY,
+                pavilion INTEGER NOT NULL,
+                opened_by_id INTEGER NOT NULL REFERENCES employees(id),
+                opened_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+                closed_at TIMESTAMP WITHOUT TIME ZONE,
+                closed_by_id INTEGER REFERENCES employees(id),
+                opening_balance NUMERIC(12,2) NOT NULL DEFAULT 0,
+                closing_balance NUMERIC(12,2),
+                status VARCHAR(20) NOT NULL DEFAULT 'OPEN'
+            );
+        """))
+        # Колонка shift_id в payments
+        await conn.execute(text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='payments' AND column_name='shift_id') THEN
+                    ALTER TABLE payments ADD COLUMN shift_id INTEGER REFERENCES cash_shifts(id);
                 END IF;
             END $$;
         """))
@@ -147,6 +171,7 @@ app.add_middleware(
 
 
 app.include_router(orders_router)
+app.include_router(cash_router)
 app.include_router(documents_router)
 app.include_router(price_list_router)
 app.include_router(analytics_router)

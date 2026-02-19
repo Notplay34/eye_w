@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>if(!localStorage.getItem('eye_w_token'))window.location.replace('login.html');</script>
+  <title>Касса и смены</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .cash-page { max-width: 800px; margin: 0 auto; padding: 1rem; }
+    .cash-header { margin-bottom: 1.5rem; }
+    .cash-header h1 { font-family: var(--font-serif); margin: 0 0 0.25rem; }
+    .cash-header p { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
+    .cash-pavilion { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.25rem; margin-bottom: 1.25rem; }
+    .cash-pavilion h2 { margin: 0 0 1rem; font-size: 1.1rem; }
+    .cash-current { margin-bottom: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 8px; }
+    .cash-current.open { border-left: 4px solid var(--accent); }
+    .cash-current.closed { border-left: 4px solid var(--text-muted); }
+    .cash-current p { margin: 0.25rem 0; font-size: 0.95rem; }
+    .cash-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-top: 1rem; }
+    .cash-actions label { display: block; font-size: 0.85rem; margin-bottom: 0.25rem; color: var(--text-muted); }
+    .cash-actions input[type="number"] { width: 140px; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; }
+    .cash-actions .btn { margin-right: 0.5rem; }
+    .cash-list { margin-top: 1rem; }
+    .cash-list table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .cash-list th, .cash-list td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
+    .cash-list th { background: var(--surface2); font-weight: 600; }
+    .nav-links { display: flex; gap: 1rem; font-size: 0.9rem; margin-top: 0.5rem; }
+    .nav-links a { color: var(--accent); text-decoration: none; }
+    .nav-links a:hover { text-decoration: underline; }
+    .error-msg { color: #b91c1c; font-size: 0.9rem; margin-top: 0.5rem; }
+    .status-open { color: var(--accent); font-weight: 500; }
+    .status-closed { color: var(--text-muted); }
+  </style>
+</head>
+<body>
+  <div class="cash-page">
+    <header class="header">
+      <div>
+        <h1 class="header__title">Касса и смены</h1>
+        <p class="header__subtitle">Открытие и закрытие смен по павильонам</p>
+      </div>
+      <div class="nav-links">
+        <span id="userName"></span>
+        <a href="index.html">Форма документов</a>
+        <a href="plate-operator.html">Изготовление номеров</a>
+        <a href="account.html">Меню</a>
+        <a href="login.html" onclick="window.clearAuth()">Выйти</a>
+      </div>
+    </header>
+
+    <div id="pavilion1" class="cash-pavilion">
+      <h2>Павильон 1</h2>
+      <div id="current1" class="cash-current"></div>
+      <div id="actions1" class="cash-actions"></div>
+      <p id="err1" class="error-msg" style="display:none;"></p>
+      <div id="list1" class="cash-list" style="display:none;"></div>
+    </div>
+
+    <div id="pavilion2" class="cash-pavilion">
+      <h2>Павильон 2</h2>
+      <div id="current2" class="cash-current"></div>
+      <div id="actions2" class="cash-actions"></div>
+      <p id="err2" class="error-msg" style="display:none;"></p>
+      <div id="list2" class="cash-list" style="display:none;"></div>
+    </div>
+  </div>
+
+  <div id="modalClose" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100; align-items:center; justify-content:center;" class="modal">
+    <div style="background:var(--surface); padding:1.5rem; border-radius:var(--radius); max-width:360px; width:90%;">
+      <h3 style="margin:0 0 1rem;">Закрыть смену</h3>
+      <p style="margin:0 0 0.5rem; font-size:0.9rem; color:var(--text-muted);">Павильон <strong id="modalPavilion"></strong>. Введите посчитанную сумму в кассе, ₽</p>
+      <label style="display:block; margin-bottom:0.35rem;">Сумма в кассе, ₽</label>
+      <input type="number" id="modalClosingBalance" min="0" step="0.01" value="0" style="width:100%; padding:0.6rem; margin-bottom:1rem; box-sizing:border-box;">
+      <div style="display:flex; gap:0.5rem;">
+        <button type="button" class="btn btn--primary" id="modalCloseSubmit">Закрыть смену</button>
+        <button type="button" class="btn btn--secondary" id="modalCloseCancel">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+(function () {
+  var API = window.API_BASE_URL || '';
+  var fetchApi = window.fetchWithAuth || fetch;
+  if (!window.getToken || !window.getToken()) return;
+
+  var user = window.getUser();
+  if (user) document.getElementById('userName').textContent = user.name || '';
+
+  function showErr(pavilion, msg) {
+    var el = document.getElementById('err' + pavilion);
+    el.textContent = msg || '';
+    el.style.display = msg ? 'block' : 'none';
+  }
+
+  function renderCurrent(pavilion, data) {
+    var cur = document.getElementById('current' + pavilion);
+    var actions = document.getElementById('actions' + pavilion);
+    showErr(pavilion, '');
+    if (!data || data.error) {
+      cur.innerHTML = '<p>Не удалось загрузить данные. ' + (data && data.detail ? data.detail : '') + '</p>';
+      cur.className = 'cash-current';
+      actions.innerHTML = '';
+      return;
+    }
+    var shift = data.shift;
+    var total = data.total_in_shift || 0;
+    if (!shift) {
+      cur.className = 'cash-current';
+      cur.innerHTML = '<p>Смена не открыта.</p>';
+      actions.innerHTML = '<div><label>Начальный остаток, ₽</label><input type="number" id="openBalance' + pavilion + '" min="0" step="0.01" value="0"></div>' +
+        '<button type="button" class="btn btn--primary" data-open-pavilion="' + pavilion + '">Открыть смену</button>';
+      actions.querySelector('[data-open-pavilion]').onclick = function () { openShift(pavilion); };
+      return;
+    }
+    cur.className = 'cash-current open';
+    cur.innerHTML = '<p><span class="status-open">Смена открыта</span> (id ' + shift.id + ')</p>' +
+      '<p>Открыта: ' + (shift.opened_at ? new Date(shift.opened_at).toLocaleString('ru') : '') + '</p>' +
+      '<p><strong>Сумма по смене (оплаты):</strong> ' + total.toFixed(2) + ' ₽</p>' +
+      '<p>Начальный остаток: ' + (shift.opening_balance != null ? Number(shift.opening_balance).toFixed(2) : '0') + ' ₽</p>';
+    actions.innerHTML = '<button type="button" class="btn btn--primary" data-close-shift="' + shift.id + '" data-pavilion="' + pavilion + '">Закрыть смену</button>';
+    actions.querySelector('[data-close-shift]').onclick = function () {
+      document.getElementById('modalPavilion').textContent = pavilion;
+      document.getElementById('modalClosingBalance').value = (total + (shift.opening_balance != null ? Number(shift.opening_balance) : 0)).toFixed(2);
+      document.getElementById('modalClose').style.display = 'flex';
+      document.getElementById('modalClose').dataset.shiftId = shift.id;
+    };
+  }
+
+  function openShift(pavilion) {
+    var input = document.getElementById('openBalance' + pavilion);
+    var balance = input ? parseFloat(input.value) || 0 : 0;
+    fetchApi(API + '/cash/shifts', {
+      method: 'POST',
+      body: JSON.stringify({ pavilion: pavilion, opening_balance: balance })
+    }).then(function (r) {
+      if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+      return r.json();
+    }).then(function () {
+      loadPavilion(pavilion);
+    }).catch(function (e) {
+      showErr(pavilion, e.message || 'Ошибка открытия смены');
+    });
+  }
+
+  function loadPavilion(pavilion) {
+    fetchApi(API + '/cash/shifts/current?pavilion=' + pavilion)
+      .then(function (r) {
+        if (r.status === 403) return { error: true, detail: 'Нет доступа к кассе этого павильона' };
+        return r.json();
+      })
+      .then(function (data) {
+        if (data && data.detail && data.error === undefined) data.error = true;
+        renderCurrent(pavilion, data);
+      })
+      .catch(function () {
+        renderCurrent(pavilion, { error: true, detail: 'Ошибка сети' });
+      });
+  }
+
+  document.getElementById('modalCloseSubmit').onclick = function () {
+    var shiftId = document.getElementById('modalClose').dataset.shiftId;
+    var balance = parseFloat(document.getElementById('modalClosingBalance').value) || 0;
+    fetchApi(API + '/cash/shifts/' + shiftId + '/close', {
+      method: 'PATCH',
+      body: JSON.stringify({ closing_balance: balance })
+    }).then(function (r) {
+      if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+      return r.json();
+    }).then(function () {
+      document.getElementById('modalClose').style.display = 'none';
+      loadPavilion(1);
+      loadPavilion(2);
+    }).catch(function (e) {
+      alert(e.message || 'Ошибка закрытия смены');
+    });
+  };
+  document.getElementById('modalCloseCancel').onclick = function () {
+    document.getElementById('modalClose').style.display = 'none';
+  };
+
+  loadPavilion(1);
+  loadPavilion(2);
+})();
+  </script>
+</body>
+</html>
