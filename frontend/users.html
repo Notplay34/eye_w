@@ -33,8 +33,22 @@
 </head>
 <body>
   <div class="users">
-    <h1>Управление аккаунтами</h1>
-    <p class="users__link"><a href="account.html">← В меню</a></p>
+    <header class="header" style="margin-bottom: 1rem;">
+      <div>
+        <h1 class="header__title" style="margin-bottom: 0.25rem;">Управление аккаунтами</h1>
+        <p class="header__subtitle" style="margin:0;">Сотрудники, роли, пароли</p>
+      </div>
+      <nav class="nav-bar">
+        <span class="nav-group"><a href="account.html">Меню</a></span>
+        <span class="nav-group"><a href="index.html">Павильон 1</a></span>
+        <span class="nav-group"><a href="plate-operator.html">Павильон 2</a></span>
+        <span class="nav-group"><a href="plate-cash.html">Касса номеров</a></span>
+        <span class="nav-group"><a href="cash-shifts.html">Касса</a></span>
+        <span class="nav-group"><a href="admin.html">Админка</a><a href="users.html">Аккаунты</a></span>
+        <span class="nav-user" id="usersUserName"></span>
+        <a href="login.html" class="nav-logout" onclick="window.clearAuth()">Выйти</a>
+      </nav>
+    </header>
     <p><button type="button" class="btn" id="btnAdd">Добавить сотрудника</button></p>
     <div id="listContent" class="loading">Загрузка…</div>
   </div>
@@ -70,6 +84,7 @@
     (function () {
       if (!window.requireAuth()) return;
       var user = window.getUser();
+      if (user && document.getElementById('usersUserName')) document.getElementById('usersUserName').textContent = user.name || '';
       if (user && user.role !== 'ROLE_ADMIN') {
         document.getElementById('listContent').innerHTML = '<p class="error">Доступ только у директора.</p>';
         return;

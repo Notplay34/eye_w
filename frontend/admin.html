@@ -45,11 +45,27 @@
 </head>
 <body>
   <div class="admin">
-    <h1>Админка</h1>
-    <p class="admin__link"><a href="account.html">← В меню</a></p>
+    <header class="header" style="margin-bottom: 1rem;">
+      <div>
+        <h1 class="header__title" style="margin-bottom: 0.25rem;">Админка</h1>
+        <p class="header__subtitle" style="margin:0;">Аналитика, заказы, сотрудники, прейскурант</p>
+      </div>
+      <nav class="nav-bar">
+        <span class="nav-group"><a href="account.html">Меню</a></span>
+        <span class="nav-group"><a href="index.html">Павильон 1</a></span>
+        <span class="nav-group"><a href="plate-operator.html">Павильон 2</a></span>
+        <span class="nav-group"><a href="plate-cash.html">Касса номеров</a></span>
+        <span class="nav-group"><a href="cash-shifts.html">Касса</a></span>
+        <span class="nav-group"><a href="admin.html">Админка</a><a href="users.html">Аккаунты</a></span>
+        <span class="nav-user" id="adminUserName"></span>
+        <a href="login.html" class="nav-logout" onclick="window.clearAuth()">Выйти</a>
+      </nav>
+    </header>
     <p class="text-muted" style="margin-bottom:0.5rem;">Обновить данные: кнопка ниже или перезагрузка страницы (<kbd>F5</kbd>)</p>
     <button type="button" class="btn btn-refresh" id="btnRefresh">Обновить данные</button>
 
+    <div class="admin-block" style="margin-bottom: 2rem;">
+      <h2 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 0.75rem;">Аналитика</h2>
     <section id="sectionToday">
       <h2>Сводка за сегодня</h2>
       <div id="todayContent" class="loading">Загрузка…</div>
@@ -71,7 +87,10 @@
       </div>
       <div id="empAnalyticsContent" class="loading">Загрузка…</div>
     </section>
+    </div>
 
+    <div class="admin-block" style="margin-bottom: 2rem;">
+      <h2 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 0.75rem;">Данные</h2>
     <section id="sectionOrders">
       <h2>Заказы (последние 100)</h2>
       <div class="filter-row">
@@ -93,7 +112,10 @@
       <h2>Сотрудники</h2>
       <div id="employeesContent" class="loading">Загрузка…</div>
     </section>
+    </div>
 
+    <div class="admin-block" style="margin-bottom: 2rem;">
+      <h2 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 0.75rem;">Настройки</h2>
     <section id="sectionPriceList">
       <h2>Прейскурант</h2>
       <p class="text-muted" style="margin-bottom:0.75rem;">Меняйте название и цену, добавляйте и удаляйте позиции. Сохранённый прейскурант используется в форме заказа.</p>
@@ -104,6 +126,7 @@
         <span id="priceListMessage" class="text-muted"></span>
       </p>
     </section>
+    </div>
   </div>
 
   <div class="modal" id="orderDetailModal">
@@ -118,6 +141,8 @@
   <script>
     (function() {
       if (!window.requireAuth()) return;
+      var user = window.getUser();
+      if (user && document.getElementById('adminUserName')) document.getElementById('adminUserName').textContent = user.name || '';
       var API_BASE = window.API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
       var fetchApi = window.fetchWithAuth || fetch;
       var todayEl = document.getElementById('todayContent');

@@ -14,12 +14,17 @@
   <div class="app">
     <header class="header">
       <h1 class="header__title">Оформление документов</h1>
-      <div class="header__user" id="headerUser">
-        <span id="currentUserName"></span>
-        <a href="account.html" style="margin-left:0.5rem;">Меню</a>
-        <a href="plate-operator.html" style="margin-left:0.5rem;">Павильон 2</a>
-        <a href="login.html" id="btnLogout" style="margin-left:0.5rem;">Выйти</a>
-      </div>
+      <p class="header__subtitle" style="margin:0;">Павильон 1 — форма заказа и приём оплаты</p>
+      <nav class="nav-bar" id="headerNav">
+        <span class="nav-group"><a href="account.html">Меню</a></span>
+        <span class="nav-group"><a href="index.html">Павильон 1</a></span>
+        <span class="nav-group"><a href="plate-operator.html">Павильон 2</a></span>
+        <span class="nav-group"><a href="plate-cash.html">Касса номеров</a></span>
+        <span class="nav-group"><a href="cash-shifts.html">Касса</a></span>
+        <span class="nav-group"><a href="admin.html">Админка</a><a href="users.html">Аккаунты</a></span>
+        <span class="nav-user" id="currentUserName"></span>
+        <a href="login.html" id="btnLogout" class="nav-logout">Выйти</a>
+      </nav>
     </header>
 
     <main class="main">

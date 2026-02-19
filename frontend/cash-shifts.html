@@ -39,13 +39,16 @@
         <h1 class="header__title">Касса</h1>
         <p class="header__subtitle">Таблица: фамилия и инициалы, заявление, госпошлина, ДКП, страховка, номера, итого</p>
       </div>
-      <div class="nav-links">
-        <span id="userName"></span>
-        <a href="index.html">Форма документов</a>
-        <a href="plate-operator.html">Изготовление номеров</a>
-        <a href="account.html">Меню</a>
-        <a href="login.html" onclick="window.clearAuth()">Выйти</a>
-      </div>
+      <nav class="nav-bar">
+        <span class="nav-group"><a href="account.html">Меню</a></span>
+        <span class="nav-group"><a href="index.html">Павильон 1</a></span>
+        <span class="nav-group"><a href="plate-operator.html">Павильон 2</a></span>
+        <span class="nav-group"><a href="plate-cash.html">Касса номеров</a></span>
+        <span class="nav-group"><a href="cash-shifts.html">Касса</a></span>
+        <span class="nav-group"><a href="admin.html">Админка</a><a href="users.html">Аккаунты</a></span>
+        <span class="nav-user" id="userName"></span>
+        <a href="login.html" class="nav-logout" onclick="window.clearAuth()">Выйти</a>
+      </nav>
     </header>
 
     <div class="cash-toolbar">
