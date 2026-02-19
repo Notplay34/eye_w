@@ -20,6 +20,7 @@
   <div class="account">
     <nav class="account__sidebar">
       <a href="index.html">Оформление заказов</a>
+      <a href="plate-operator.html" id="linkPlate" style="display:none;">Изготовление номеров</a>
       <a href="admin.html" id="linkAdmin" style="display:none;">Админка</a>
       <a href="users.html" id="linkUsers" style="display:none;">Управление аккаунтами</a>
       <a href="login.html" id="linkLogout" style="margin-top:1rem; color: var(--text-muted);">Выйти</a>
@@ -35,6 +36,10 @@
       if (!window.requireAuth()) return;
       var user = window.getUser();
       if (!user) return;
+      document.getElementById('userInfo').textContent = 'Вы вошли как ' + (user.name || user.login || '');
+      if (['ROLE_PLATE_OPERATOR', 'ROLE_MANAGER', 'ROLE_ADMIN'].indexOf(user.role) >= 0) {
+        document.getElementById('linkPlate').style.display = 'block';
+      }
       if (user.role === 'ROLE_MANAGER' || user.role === 'ROLE_ADMIN') {
         document.getElementById('linkAdmin').style.display = 'block';
       }

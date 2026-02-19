@@ -1,7 +1,7 @@
-"""Веб-авторизация: логин по login+пароль, JWT, проверка ролей. Для ботов — check-admin по telegram_id."""
+"""Веб-авторизация: логин по login+пароль, JWT, проверка ролей."""
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy import select, func
@@ -76,7 +76,9 @@ def require_roles(allowed_roles: List[EmployeeRole]):
 
 
 RequireFormAccess = require_roles([EmployeeRole.ROLE_OPERATOR, EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN])
+RequireOrdersListAccess = require_roles([EmployeeRole.ROLE_OPERATOR, EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN, EmployeeRole.ROLE_PLATE_OPERATOR])
 RequireAnalyticsAccess = require_roles([EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN])
+RequirePlateAccess = require_roles([EmployeeRole.ROLE_PLATE_OPERATOR, EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN])
 RequireAdmin = require_roles([EmployeeRole.ROLE_ADMIN])
 
 
@@ -120,18 +122,3 @@ async def login(
 @router.get("/me", response_model=UserInfo)
 async def me(current_user: UserInfo = Depends(RequireFormAccess)):
     return current_user
-
-
-@router.get("/check-admin")
-async def check_admin(
-    telegram_id: int = Query(..., description="Telegram user id"),
-    db: AsyncSession = Depends(get_db),
-):
-    r = await db.execute(
-        select(Employee.id).where(
-            Employee.telegram_id == telegram_id,
-            Employee.role == EmployeeRole.ROLE_ADMIN,
-            Employee.is_active == True,
-        )
-    )
-    return {"is_admin": r.scalar_one_or_none() is not None}

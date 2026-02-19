@@ -1,12 +1,12 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.logging_config import get_logger
-from app.api.auth import RequireFormAccess, RequireAnalyticsAccess, UserInfo
+from app.api.auth import RequireFormAccess, RequireAnalyticsAccess, RequireOrdersListAccess, RequirePlateAccess, UserInfo
 
 logger = get_logger(__name__)
 from app.models import Order, OrderStatus, Payment, PaymentType, Employee
@@ -16,7 +16,6 @@ from app.schemas.order import OrderCreate, OrderResponse, OrderDetailResponse
 from app.schemas.payment import PayOrderResponse
 from app.services.order_service import create_order
 from app.services.order_status import can_transition
-from app.services.telegram_notify import notify_plate_operators_new_order
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -94,10 +93,6 @@ async def pay_order(
     db.add(order)
     await db.flush()
     logger.info("Оплата принята по заказу id=%s", order.id)
-    if order.need_plate:
-        plate_qty = (order.form_data or {}).get("plate_quantity")
-        plate_qty = int(plate_qty) if plate_qty is not None else 1
-        await notify_plate_operators_new_order(db, order.id, order.public_id, order.total_amount, plate_qty)
     return PayOrderResponse(
         order_id=order.id,
         public_id=order.public_id,
@@ -105,16 +100,57 @@ async def pay_order(
     )
 
 
+@router.get("/plate-list")
+async def list_orders_for_plate(
+    db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequirePlateAccess),
+):
+    """Список заказов с номерами для павильона 2: клиент, сумма, оплачено, долг."""
+    from sqlalchemy import func
+
+    q = (
+        select(Order, func.coalesce(func.sum(Payment.amount), 0).label("total_paid"))
+        .outerjoin(Payment, Payment.order_id == Order.id)
+        .where(Order.need_plate == True)
+        .where(Order.status.in_([OrderStatus.PAID, OrderStatus.PLATE_IN_PROGRESS, OrderStatus.PLATE_READY, OrderStatus.PROBLEM]))
+        .group_by(Order.id)
+        .order_by(Order.created_at.desc())
+        .limit(100)
+    )
+    result = await db.execute(q)
+    rows = result.all()
+    out = []
+    for order, total_paid in rows:
+        total_paid = float(total_paid or 0)
+        fd = order.form_data or {}
+        client = fd.get("client_fio") or fd.get("client_legal_name") or "—"
+        out.append({
+            "id": order.id,
+            "public_id": order.public_id,
+            "status": order.status.value,
+            "total_amount": float(order.total_amount),
+            "income_pavilion2": float(order.income_pavilion2),
+            "client": client,
+            "total_paid": total_paid,
+            "debt": float(order.total_amount) - total_paid,
+            "created_at": order.created_at.isoformat() if order.created_at else "",
+        })
+    return out
+
+
 @router.get("", response_model=list[OrderResponse])
 async def list_orders(
     status: Optional[OrderStatus] = None,
+    need_plate: Optional[bool] = None,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-    _user: UserInfo = Depends(RequireFormAccess),
+    _user: UserInfo = Depends(RequireOrdersListAccess),
 ):
     q = select(Order).order_by(Order.created_at.desc()).limit(limit)
     if status is not None:
         q = q.where(Order.status == status)
+    if need_plate is not None:
+        q = q.where(Order.need_plate == need_plate)
     result = await db.execute(q)
     orders = result.scalars().all()
     return [
@@ -138,7 +174,7 @@ async def list_orders(
 async def get_order(
     order_id: int,
     db: AsyncSession = Depends(get_db),
-    _user: UserInfo = Depends(RequireFormAccess),
+    _user: UserInfo = Depends(RequireOrdersListAccess),
 ):
     order = await _get_order(db, order_id)
     if not order:
@@ -191,17 +227,56 @@ class OrderStatusUpdate(BaseModel):
     status: OrderStatus
 
 
-async def _is_plate_operator(db: AsyncSession, telegram_id: int) -> bool:
-    from app.models import Employee
-    from app.models.employee import EmployeeRole
-    r = await db.execute(
-        select(Employee.id).where(
-            Employee.telegram_id == telegram_id,
-            Employee.role == EmployeeRole.ROLE_PLATE_OPERATOR,
-            Employee.is_active == True,
+class PayExtraBody(BaseModel):
+    amount: float
+
+
+@router.get("/{order_id}/payments")
+async def get_order_payments(
+    order_id: int,
+    db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequireOrdersListAccess),
+):
+    """Список платежей по заказу (для расчёта total_paid и долга)."""
+    order = await _get_order(db, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ не найден")
+    r = await db.execute(select(Payment).where(Payment.order_id == order_id).order_by(Payment.created_at))
+    payments = r.scalars().all()
+    total_paid = sum(float(p.amount) for p in payments)
+    return {
+        "payments": [{"amount": float(p.amount), "type": p.type.value, "created_at": p.created_at.isoformat() if p.created_at else ""} for p in payments],
+        "total_paid": total_paid,
+        "debt": float(order.total_amount) - total_paid,
+    }
+
+
+@router.post("/{order_id}/pay-extra")
+async def pay_extra(
+    order_id: int,
+    body: PayExtraBody,
+    db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequirePlateAccess),
+):
+    """Доплата за номера (INCOME_PAVILION2)."""
+    if body.amount <= 0:
+        raise HTTPException(status_code=400, detail="Сумма должна быть больше нуля")
+    order = await _get_order(db, order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Заказ не найден")
+    if not order.need_plate:
+        raise HTTPException(status_code=400, detail="У заказа нет номера для доплаты")
+    db.add(
+        Payment(
+            order_id=order.id,
+            amount=body.amount,
+            type=PaymentType.INCOME_PAVILION2,
+            employee_id=_user.id,
         )
     )
-    return r.scalar_one_or_none() is not None
+    await db.flush()
+    logger.info("Доплата за номера id=%s сумма=%s", order.id, body.amount)
+    return {"order_id": order.id, "amount": body.amount, "type": "INCOME_PAVILION2"}
 
 
 @router.patch("/{order_id}/status")
@@ -209,15 +284,8 @@ async def update_order_status(
     order_id: int,
     body: OrderStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    x_telegram_user_id: Optional[str] = Header(None, alias="X-Telegram-User-Id"),
+    _user: UserInfo = Depends(RequirePlateAccess),
 ):
-    if x_telegram_user_id is not None:
-        try:
-            tid = int(x_telegram_user_id)
-        except ValueError:
-            raise HTTPException(status_code=403, detail="Неверный X-Telegram-User-Id")
-        if not await _is_plate_operator(db, tid):
-            raise HTTPException(status_code=403, detail="Доступ только для оператора павильона 2")
     new_status = body.status
     order = await _get_order(db, order_id)
     if not order:

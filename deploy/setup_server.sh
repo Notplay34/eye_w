@@ -5,9 +5,13 @@
 set -e
 cd "$(dirname "$0")/.."
 
-echo "=== 1. JWT_SECRET в backend/.env ==="
+echo "=== 1. backend/.env ==="
 if [ ! -f backend/.env ]; then
   touch backend/.env
+fi
+if ! grep -q '^DATABASE_URL=' backend/.env 2>/dev/null; then
+  echo "DATABASE_URL=postgresql+asyncpg://eye_user:eye_pass@localhost:5432/eye_w" >> backend/.env
+  echo "Добавлен DATABASE_URL (при необходимости измените пароль)"
 fi
 if ! grep -q '^JWT_SECRET=' backend/.env 2>/dev/null; then
   SECRET="eye_w_$(openssl rand -hex 24 2>/dev/null || echo "secret_$(date +%s)")"
@@ -41,11 +45,31 @@ if command -v curl >/dev/null 2>&1; then
   fi
 fi
 
-echo "=== 3. Backend ==="
+echo "=== 3. Backend (systemd) ==="
+if [ ! -f /etc/systemd/system/eye_w.service ]; then
+  cat > /etc/systemd/system/eye_w.service << 'SVC'
+[Unit]
+Description=Eye-W Backend
+After=network.target postgresql.service
+
+[Service]
+User=root
+WorkingDirectory=/opt/eye_w/backend
+ExecStart=/opt/eye_w/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+SVC
+  systemctl daemon-reload
+  systemctl enable eye_w
+  echo "Создан сервис eye_w.service"
+fi
 if systemctl restart eye_w 2>/dev/null; then
   echo "Сервис eye_w перезапущен"
 else
-  echo "Если сервис eye_w ещё не создан: см. DEPLOYMENT.md, раздел systemd. Запуск вручную: cd backend && source .venv/bin/activate && uvicorn app.main:app --host 127.0.0.1 --port 8000"
+  echo "Запуск сервиса: systemctl start eye_w"
+  systemctl start eye_w 2>/dev/null || true
 fi
 
 echo ""

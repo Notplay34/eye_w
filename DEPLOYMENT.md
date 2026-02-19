@@ -136,23 +136,7 @@ systemctl status eye_w
 
 ---
 
-## 7. Telegram-боты (по желанию)
-
-На сервере в отдельных директориях:
-
-```bash
-cd /opt/eye_w/bot_plate
-pip install -r requirements.txt
-export TELEGRAM_BOT_TOKEN_PLATE=...
-export API_BASE_URL=http://127.0.0.1:8000
-python main.py
-```
-
-Аналогично для `bot_owner`. В backend в `.env` добавить `TELEGRAM_BOT_TOKEN_PLATE=...` для уведомлений при оплате. Ботов тоже можно оформить как systemd-сервисы.
-
----
-
-## 8. Итог
+## 7. Итог
 
 - **Сайт с формой:** http://ваш-домен.ru (или http://IP).
 - **API и здоровье:** http://ваш-домен.ru/health, http://ваш-домен.ru/docs.

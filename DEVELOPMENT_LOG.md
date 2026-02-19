@@ -54,6 +54,50 @@ DEVELOPMENT_LOG.md используется для:
 
 ---
 
+### [2025-02-18] — Готовность к запуску: меню, аналитика, навигация
+
+**Тип изменения:** Feature, Improvement
+
+**Описание:**  
+Подготовка к релизу. После входа — переход на страницу «Меню» (account.html). В меню: оформление заказов, изготовление номеров (для plate/manager/admin), админка (manager/admin), управление аккаунтами (admin). В админке добавлены: сводка за месяц, учёт по сотрудникам (день/месяц). В index.html добавлена ссылка «Меню». deploy/setup_server.sh добавляет DATABASE_URL в .env при отсутствии. Обновлены USER_GUIDE, INSTALL (логика входа).
+
+**Причина:**  
+Цель — готовый продукт к запуску. Единая точка входа (меню), полная аналитика в админке, упрощённая установка.
+
+**Затронутые файлы:**  
+- frontend/account.html (ссылка на plate, отображение имени)
+- frontend/admin.html (month, employees analytics)
+- frontend/index.html (ссылка Меню)
+- frontend/login.html (редирект на account)
+- deploy/setup_server.sh (DATABASE_URL)
+- USER_GUIDE.md
+
+**Связь с PROJECT_CONTEXT.md:**  
+Без изменений архитектуры.
+
+---
+
+### [2025-02-18] — Этап C: веб-интерфейс павильона 2 (plate-operator)
+
+**Тип изменения:** Feature
+
+**Описание:**  
+Завершён этап C. Добавлен эндпоинт GET /orders/plate-list — список заказов с номерами для павильона 2 с полями: id, public_id, status, total_amount, client (из form_data), total_paid, debt. Один запрос вместо N+1. Frontend plate-operator.html переведён на использование plate-list. Добавлена ссылка «Павильон 2» в шапку index.html. Обновлён USER_GUIDE: описание работы оператора павильона 2, ссылка на plate-operator.html.
+
+**Причина:**  
+OrderResponse не содержал form_data; список заказов требовал N запросов к /payments. Нужен единый эндпоинт с клиентом и суммами.
+
+**Затронутые файлы:**  
+- backend/app/api/orders.py (GET /orders/plate-list)
+- frontend/plate-operator.html (loadOrders через plate-list)
+- frontend/index.html (ссылка «Павильон 2»)
+- USER_GUIDE.md (раздел Павильон 2)
+
+**Связь с PROJECT_CONTEXT.md:**  
+Без изменений архитектуры.
+
+---
+
 ### [2025-02-14] — PATCH /employees, docker-compose, раздел «Как тестировать»
 
 **Тип изменения:** Feature, Improvement
