@@ -127,7 +127,9 @@
         table.style.display = 'table';
         orders.forEach(function (o) {
           var row = document.createElement('tr');
-          var issueBtn = CAN_ISSUE.indexOf(o.status) >= 0 ? '<button type="button" class="btn btn-sm btn--primary" data-order="' + o.id + '" data-status="COMPLETED">Выдано</button>' : '';
+          var clientEsc = (o.client || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+          var plateAmt = o.plate_amount != null ? o.plate_amount : o.total_amount;
+          var issueBtn = CAN_ISSUE.indexOf(o.status) >= 0 ? '<button type="button" class="btn btn-sm btn--primary" data-order="' + o.id + '" data-status="COMPLETED" data-client="' + clientEsc + '" data-amount="' + (plateAmt || 0) + '">Выдано</button>' : '';
           var deleteBtn = CAN_DELETE.indexOf(o.status) >= 0 ? '<button type="button" class="btn btn-sm btn--secondary" data-order="' + o.id + '" data-status="PROBLEM" data-delete="1">Удалить</button>' : '';
           var payBtn = (o.debt || 0) > 0 ? '<button type="button" class="btn btn-sm btn--primary" data-order="' + o.id + '" data-public-id="' + (o.public_id || o.id) + '" data-pay="1">Доплата</button>' : '';
           row.innerHTML =
@@ -147,14 +149,27 @@
             var id = parseInt(btn.getAttribute('data-order'), 10);
             var status = btn.getAttribute('data-status');
             var isDelete = btn.getAttribute('data-delete') === '1';
+            var clientName = (btn.getAttribute('data-client') || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
+            var plateAmount = parseFloat(btn.getAttribute('data-amount')) || 0;
             if (isDelete) {
               if (!confirm('Удалить заказ из списка? Заказ будет переведён в статус «Проблема» и больше не отобразится здесь.')) return;
             }
             fetchApi(API + '/orders/' + id + '/status', {
               method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ status: status })
             }).then(function (r) {
               if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || 'Ошибка'); });
+              if (status === 'COMPLETED') {
+                return fetchApi(API + '/plate-cash/rows', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ client_name: clientName || '—', amount: plateAmount })
+                }).then(function (pr) {
+                  if (!pr.ok) return pr.text().then(function () { loadOrders(); });
+                  loadOrders();
+                });
+              }
               loadOrders();
             }).catch(function (e) { alert(e.message || 'Ошибка'); });
           });

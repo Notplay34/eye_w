@@ -209,8 +209,15 @@
   function load() {
     fetchApi(API + '/plate-cash/rows')
       .then(function (r) {
-        if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
-        return r.json();
+        return r.text().then(function (text) {
+          if (!r.ok) {
+            if (text.trim().indexOf('<') === 0) {
+              throw new Error('Сервер вернул страницу вместо данных. На сервере в nginx добавьте в location: plate-cash/ и выполните: nginx -t && systemctl reload nginx');
+            }
+            try { var j = JSON.parse(text); throw new Error(j.detail || r.statusText); } catch (e) { if (e.message) throw e; }
+          }
+          try { return JSON.parse(text); } catch (_) { throw new Error('Ответ не JSON'); }
+        });
       })
       .then(function (data) {
         rows = (data && data.rows) ? data.rows : [];
