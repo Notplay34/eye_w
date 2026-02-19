@@ -4,20 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Меню</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .account { display: flex; min-height: 100vh; }
-    .account__sidebar { width: 240px; min-width: 240px; background: var(--surface); border-right: 1px solid var(--border); padding: 1.25rem 0; }
-    .account__sidebar a { display: block; padding: 0.5rem 1.25rem; color: var(--text); text-decoration: none; }
-    .account__sidebar a:hover { background: var(--surface2); color: var(--accent); }
-    .account__sidebar .active { font-weight: 600; color: var(--accent); }
-    .account__sidebar .menu-group { margin-top: 1rem; }
-    .account__sidebar .menu-group:first-child { margin-top: 0; }
-    .account__sidebar .menu-group__title { padding: 0.35rem 1.25rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); }
-    .account__content { flex: 1; padding: 2rem; }
-    .account__content h1 { font-family: var(--font-serif); margin: 0 0 0.5rem; }
-    .account__content p { color: var(--text-muted); margin: 0; }
-  </style>
 </head>
 <body>
   <div class="account">
@@ -51,17 +41,17 @@
       <p id="userInfo">Выберите раздел слева.</p>
     </main>
   </div>
-  <div id="modalChangePassword" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100; align-items:center; justify-content:center; flex-direction:column;" class="modal-password">
-    <div style="background:var(--surface); padding:1.5rem; border-radius:var(--radius); max-width:360px; width:90%; box-shadow:var(--shadow);">
-      <h3 style="margin:0 0 1rem;">Сменить пароль</h3>
-      <label style="display:block; margin-bottom:0.35rem; font-size:0.9rem;">Текущий пароль</label>
-      <input type="password" id="inputOldPassword" style="width:100%; padding:0.6rem; margin-bottom:0.75rem; box-sizing:border-box;">
-      <label style="display:block; margin-bottom:0.35rem; font-size:0.9rem;">Новый пароль</label>
-      <input type="password" id="inputNewPassword" style="width:100%; padding:0.6rem; margin-bottom:0.75rem; box-sizing:border-box;">
-      <label style="display:block; margin-bottom:0.35rem; font-size:0.9rem;">Повторите новый пароль</label>
-      <input type="password" id="inputNewPassword2" style="width:100%; padding:0.6rem; margin-bottom:1rem; box-sizing:border-box;">
-      <p id="passwordMsg" style="margin:0 0 0.75rem; font-size:0.85rem; color:var(--text-muted);"></p>
-      <div style="display:flex; gap:0.5rem;">
+  <div id="modalChangePassword" class="modal" aria-hidden="true">
+    <div class="modal__box">
+      <h3>Сменить пароль</h3>
+      <label for="inputOldPassword">Текущий пароль</label>
+      <input type="password" id="inputOldPassword" autocomplete="current-password">
+      <label for="inputNewPassword">Новый пароль</label>
+      <input type="password" id="inputNewPassword" autocomplete="new-password">
+      <label for="inputNewPassword2">Повторите новый пароль</label>
+      <input type="password" id="inputNewPassword2" autocomplete="new-password">
+      <p id="passwordMsg" class="text-caption" style="margin:0 0 0.75rem;"></p>
+      <div class="row-actions">
         <button type="button" class="btn btn--primary" id="btnSubmitPassword">Сохранить</button>
         <button type="button" class="btn btn--secondary" id="btnCancelPassword">Отмена</button>
       </div>

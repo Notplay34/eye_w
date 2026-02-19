@@ -233,8 +233,3 @@ systemctl restart eye_w
 cd /opt/eye_w && git pull && bash deploy/setup_server.sh
 ```
 
----
-
-## Опционально: Django-подсистема (для частичных платежей и будущих фич)
-
-В папке `django_backend/` есть дополнительный слой на Django. Он не обязателен для базовой работы. Подробности — в `django_backend/README.md`.

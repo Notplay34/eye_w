@@ -9,34 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .plate-page { max-width: 900px; margin: 0 auto; padding: 1rem; }
-    .plate-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; }
-    .plate-table { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-    .plate-table th, .plate-table td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
-    .plate-table th { background: var(--surface2); font-weight: 600; }
-    .plate-table tr:last-child td { border-bottom: none; }
-    .plate-table .status { font-size: 0.85rem; padding: 0.2rem 0.5rem; border-radius: 6px; }
-    .plate-table .status-PAID { background: #fef3c7; color: #92400e; }
-    .plate-table .status-PLATE_IN_PROGRESS { background: #dbeafe; color: #1e40af; }
-    .plate-table .status-PLATE_READY { background: #d1fae5; color: #065f46; }
-    .plate-table .status-PROBLEM { background: #fee2e2; color: #991b1b; }
-    .plate-table .debt { color: #b91c1c; font-weight: 600; }
-    .plate-table .doc-link { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 6px; background: var(--surface2); color: var(--accent); text-decoration: none; font-size: 1.1rem; }
-    .plate-table .doc-link:hover { background: var(--accent); color: var(--surface); }
-    .plate-table .paid { color: var(--income); }
-    .btn-sm { padding: 0.35rem 0.6rem; font-size: 0.85rem; }
-    .btn-group { display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center; }
-    .btn-group .btn--primary { order: 1; }
-    .btn-group .btn--secondary { order: 2; }
-    .btn-group .btn-group__sep { width: 1px; height: 1.25em; background: var(--border); margin: 0 0.25rem; order: 2; }
-    .btn-group .btn--danger-like { order: 3; color: var(--text-muted); }
-    .btn-group .btn--danger-like:hover { color: #b91c1c; }
-    .empty-msg { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
-    .nav-links { display: flex; gap: 1rem; font-size: 0.9rem; }
-    .nav-links a { color: var(--accent); text-decoration: none; }
-    .nav-links a:hover { text-decoration: underline; }
-  </style>
 </head>
 <body>
   <div class="plate-page">
@@ -76,13 +48,13 @@
     </div>
   </div>
 
-  <div id="modalPay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100; align-items:center; justify-content:center;" class="modal">
-    <div style="background:var(--surface); padding:1.5rem; border-radius:var(--radius); max-width:360px; width:90%;">
-      <h3 style="margin:0 0 1rem;">Доплата за номера</h3>
-      <p style="margin:0 0 0.5rem; font-size:0.9rem; color:var(--text-muted);">Заказ <strong id="modalOrderId"></strong></p>
-      <label style="display:block; margin-bottom:0.35rem;">Сумма, ₽</label>
-      <input type="number" id="modalAmount" min="1" step="1" value="0" style="width:100%; padding:0.6rem; margin-bottom:1rem; box-sizing:border-box;">
-      <div style="display:flex; gap:0.5rem;">
+  <div id="modalPay" class="modal" aria-hidden="true">
+    <div class="modal__box">
+      <h3>Доплата за номера</h3>
+      <p class="text-caption" style="margin:0 0 0.5rem;">Заказ <strong id="modalOrderId"></strong></p>
+      <label for="modalAmount">Сумма, ₽</label>
+      <input type="number" id="modalAmount" min="1" step="1" value="0">
+      <div class="row-actions">
         <button type="button" class="btn btn--primary" id="modalSubmit">Принять</button>
         <button type="button" class="btn btn--secondary" id="modalCancel">Отмена</button>
       </div>

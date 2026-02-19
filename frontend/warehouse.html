@@ -5,20 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>if(!localStorage.getItem('eye_w_token'))window.location.replace('login.html');</script>
   <title>Склад заготовок</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .warehouse-page { max-width: 500px; margin: 0 auto; padding: 1rem; }
-    .warehouse-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.5rem; margin-bottom: 1.5rem; }
-    .warehouse-card h2 { font-size: 1rem; margin: 0 0 1rem; color: var(--text-muted); }
-    .warehouse-stat { font-size: 2rem; font-weight: 700; color: var(--accent); margin-bottom: 0.25rem; }
-    .warehouse-stat-label { font-size: 0.9rem; color: var(--text-muted); }
-    .warehouse-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
-    .warehouse-row input { width: 100px; padding: 0.5rem; }
-    .warehouse-msg { font-size: 0.9rem; margin-top: 0.5rem; }
-    .warehouse-msg.err { color: #b91c1c; }
-    .warehouse-msg.ok { color: var(--income); }
-    .warehouse-breakdown { font-size: 0.95rem; color: var(--text-muted); margin-top: 0.25rem; }
-  </style>
 </head>
 <body>
   <div class="warehouse-page">

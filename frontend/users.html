@@ -4,39 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Управление аккаунтами</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .users { max-width: 900px; margin: 0 auto; padding: 1rem; }
-    .users h1 { font-family: var(--font-serif); margin-bottom: 0.5rem; }
-    .users__link { margin-bottom: 1rem; }
-    .users__link a { color: var(--accent); }
-    .users table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 1rem; }
-    .users th, .users td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
-    .users th { color: var(--text-muted); font-weight: 500; }
-    .users .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.85rem; }
-    .users .error { color: #b91c1c; }
-    .users .text-muted { color: var(--text-muted); font-size: 0.85rem; }
-    .users .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 10; }
-    .users .modal.show { display: flex; }
-    .users .modal__box { background: var(--surface); padding: 1.5rem; border-radius: var(--radius); min-width: 320px; max-width: 100%; }
-    .users .modal__box h3 { margin: 0 0 1rem; }
-    .users .modal__box label { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
-    .users .modal__box input, .users .modal__box select { width: 100%; padding: 0.5rem; margin-bottom: 0.75rem; box-sizing: border-box; }
-    .users .modal__box .row { display: flex; gap: 0.5rem; margin-top: 1rem; }
-    .users .inactive { opacity: 0.65; }
-    .users .table-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; }
-    .users .copy-link { cursor: pointer; color: var(--accent); font-size: 0.85rem; }
-    .users .copy-link:hover { text-decoration: underline; }
-    .users .btn-danger { background: #dc2626; color: #fff; border-color: #dc2626; }
-    .users .btn-danger:hover { background: #b91c1c; }
-  </style>
 </head>
 <body>
   <div class="users">
-    <header class="header" style="margin-bottom: 1rem;">
+    <header class="header">
       <div>
-        <h1 class="header__title" style="margin-bottom: 0.25rem;">Управление аккаунтами</h1>
-        <p class="header__subtitle" style="margin:0;">Сотрудники, роли, пароли</p>
+        <h1 class="header__title">Управление аккаунтами</h1>
+        <p class="header__subtitle">Сотрудники, роли, пароли</p>
       </div>
       <nav class="nav-bar">
         <span class="nav-group"><a href="account.html">Меню</a></span>
