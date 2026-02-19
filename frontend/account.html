@@ -30,6 +30,7 @@
         <div class="menu-group__title">Павильон 2</div>
         <a href="plate-operator.html" id="linkPlate" style="display:none;">Изготовление номеров</a>
         <a href="plate-cash.html" id="linkPlateCash" style="display:none;">Касса номеров</a>
+        <a href="warehouse.html" id="linkWarehouse" style="display:none;">Склад заготовок</a>
       </div>
       <div class="menu-group" id="menuGroupCash">
         <div class="menu-group__title">Касса (павильон 1)</div>
@@ -41,6 +42,7 @@
         <a href="users.html" id="linkUsers" style="display:none;">Управление аккаунтами</a>
       </div>
       <div class="menu-group" style="margin-top: 1.5rem;">
+        <a href="#" id="linkChangePassword" style="color: var(--text-muted);">Сменить пароль</a>
         <a href="login.html" id="linkLogout" style="color: var(--text-muted);">Выйти</a>
       </div>
     </nav>
@@ -48,6 +50,22 @@
       <h1>Меню</h1>
       <p id="userInfo">Выберите раздел слева.</p>
     </main>
+  </div>
+  <div id="modalChangePassword" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100; align-items:center; justify-content:center; flex-direction:column;" class="modal-password">
+    <div style="background:var(--surface); padding:1.5rem; border-radius:var(--radius); max-width:360px; width:90%; box-shadow:var(--shadow);">
+      <h3 style="margin:0 0 1rem;">Сменить пароль</h3>
+      <label style="display:block; margin-bottom:0.35rem; font-size:0.9rem;">Текущий пароль</label>
+      <input type="password" id="inputOldPassword" style="width:100%; padding:0.6rem; margin-bottom:0.75rem; box-sizing:border-box;">
+      <label style="display:block; margin-bottom:0.35rem; font-size:0.9rem;">Новый пароль</label>
+      <input type="password" id="inputNewPassword" style="width:100%; padding:0.6rem; margin-bottom:0.75rem; box-sizing:border-box;">
+      <label style="display:block; margin-bottom:0.35rem; font-size:0.9rem;">Повторите новый пароль</label>
+      <input type="password" id="inputNewPassword2" style="width:100%; padding:0.6rem; margin-bottom:1rem; box-sizing:border-box;">
+      <p id="passwordMsg" style="margin:0 0 0.75rem; font-size:0.85rem; color:var(--text-muted);"></p>
+      <div style="display:flex; gap:0.5rem;">
+        <button type="button" class="btn btn--primary" id="btnSubmitPassword">Сохранить</button>
+        <button type="button" class="btn btn--secondary" id="btnCancelPassword">Отмена</button>
+      </div>
+    </div>
   </div>
   <script src="auth.js"></script>
   <script>
@@ -59,6 +77,7 @@
       if (['ROLE_PLATE_OPERATOR', 'ROLE_MANAGER', 'ROLE_ADMIN'].indexOf(user.role) >= 0) {
         document.getElementById('linkPlate').style.display = 'block';
         document.getElementById('linkPlateCash').style.display = 'block';
+        document.getElementById('linkWarehouse').style.display = 'block';
       }
       if (['ROLE_OPERATOR', 'ROLE_PLATE_OPERATOR', 'ROLE_MANAGER', 'ROLE_ADMIN'].indexOf(user.role) >= 0) {
         document.getElementById('linkCash').style.display = 'block';
@@ -73,6 +92,52 @@
         e.preventDefault();
         window.clearAuth();
         window.location.href = 'login.html';
+      });
+
+      var modalPwd = document.getElementById('modalChangePassword');
+      var linkPwd = document.getElementById('linkChangePassword');
+      var btnSubmitPwd = document.getElementById('btnSubmitPassword');
+      var btnCancelPwd = document.getElementById('btnCancelPassword');
+      var inputOld = document.getElementById('inputOldPassword');
+      var inputNew = document.getElementById('inputNewPassword');
+      var inputNew2 = document.getElementById('inputNewPassword2');
+      var msgPwd = document.getElementById('passwordMsg');
+      var API = window.API_BASE_URL || (window.location.hostname === 'localhost' ? 'http://localhost:8000' : '');
+      var fetchApi = window.fetchWithAuth || fetch;
+
+      function showModal(show) {
+        modalPwd.style.display = show ? 'flex' : 'none';
+        if (!show) {
+          inputOld.value = inputNew.value = inputNew2.value = '';
+          msgPwd.textContent = '';
+        }
+      }
+      linkPwd.addEventListener('click', function (e) { e.preventDefault(); showModal(true); });
+      btnCancelPwd.addEventListener('click', function () { showModal(false); });
+      modalPwd.addEventListener('click', function (e) { if (e.target === modalPwd) showModal(false); });
+
+      btnSubmitPwd.addEventListener('click', function () {
+        var oldP = inputOld.value;
+        var newP = inputNew.value;
+        var newP2 = inputNew2.value;
+        msgPwd.textContent = '';
+        if (!oldP) { msgPwd.textContent = 'Введите текущий пароль'; msgPwd.style.color = '#b91c1c'; return; }
+        if (!newP || newP.length < 4) { msgPwd.textContent = 'Новый пароль — не менее 4 символов'; msgPwd.style.color = '#b91c1c'; return; }
+        if (newP !== newP2) { msgPwd.textContent = 'Пароли не совпадают'; msgPwd.style.color = '#b91c1c'; return; }
+        fetchApi(API + '/auth/change-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ old_password: oldP, new_password: newP })
+        }).then(function (r) {
+          if (r.ok) {
+            msgPwd.textContent = 'Пароль изменён.';
+            msgPwd.style.color = 'var(--income)';
+            setTimeout(function () { showModal(false); }, 1500);
+          } else return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+        }).catch(function (e) {
+          msgPwd.textContent = e.message || 'Ошибка';
+          msgPwd.style.color = '#b91c1c';
+        });
       });
     })();
   </script>

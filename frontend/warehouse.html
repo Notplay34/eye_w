@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>if(!localStorage.getItem('eye_w_token'))window.location.replace('login.html');</script>
+  <title>Склад заготовок</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .warehouse-page { max-width: 500px; margin: 0 auto; padding: 1rem; }
+    .warehouse-card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .warehouse-card h2 { font-size: 1rem; margin: 0 0 1rem; color: var(--text-muted); }
+    .warehouse-stat { font-size: 2rem; font-weight: 700; color: var(--accent); margin-bottom: 0.25rem; }
+    .warehouse-stat-label { font-size: 0.9rem; color: var(--text-muted); }
+    .warehouse-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+    .warehouse-row input { width: 100px; padding: 0.5rem; }
+    .warehouse-msg { font-size: 0.9rem; margin-top: 0.5rem; }
+    .warehouse-msg.err { color: #b91c1c; }
+    .warehouse-msg.ok { color: var(--income); }
+  </style>
+</head>
+<body>
+  <div class="warehouse-page">
+    <header class="header">
+      <div>
+        <h1 class="header__title">Склад заготовок</h1>
+        <p class="header__subtitle">Остатки номеров, пополнение. Резерв под заказы и списание при изготовлении.</p>
+      </div>
+      <nav class="nav-bar">
+        <span class="nav-group"><a href="account.html">Меню</a></span>
+        <span class="nav-group"><a href="index.html">Павильон 1</a></span>
+        <span class="nav-group"><a href="plate-operator.html">Павильон 2</a></span>
+        <span class="nav-group"><a href="plate-cash.html">Касса номеров</a></span>
+        <span class="nav-group"><a href="warehouse.html">Склад</a></span>
+        <span class="nav-group"><a href="cash-shifts.html">Касса</a></span>
+        <span class="nav-group"><a href="admin.html">Админка</a><a href="users.html">Аккаунты</a></span>
+        <span class="nav-user" id="userName"></span>
+        <a href="login.html" class="nav-logout" onclick="window.clearAuth()">Выйти</a>
+      </nav>
+    </header>
+
+    <div class="warehouse-card">
+      <h2>Остаток на складе</h2>
+      <div class="warehouse-stat" id="quantity">—</div>
+      <div class="warehouse-stat-label">Всего заготовок</div>
+      <div class="warehouse-stat" id="reserved" style="font-size:1.25rem; margin-top:0.75rem;">—</div>
+      <div class="warehouse-stat-label">Зарезервировано под заказы</div>
+      <div class="warehouse-stat" id="available" style="font-size:1.25rem; margin-top:0.75rem;">—</div>
+      <div class="warehouse-stat-label">Доступно для новых заказов</div>
+    </div>
+
+    <div class="warehouse-card">
+      <h2>Пополнить склад</h2>
+      <div class="warehouse-row">
+        <input type="number" id="addAmount" min="1" value="10" placeholder="Кол-во">
+        <button type="button" class="btn btn--primary" id="btnAdd">Добавить</button>
+      </div>
+      <p id="warehouseMsg" class="warehouse-msg"></p>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+(function () {
+  var API = window.API_BASE_URL || '';
+  var fetchApi = window.fetchWithAuth || fetch;
+  if (!window.getToken || !window.getToken()) return;
+
+  var user = window.getUser();
+  if (user) document.getElementById('userName').textContent = user.name || '';
+
+  function msg(t, isErr) {
+    var el = document.getElementById('warehouseMsg');
+    el.textContent = t || '';
+    el.className = 'warehouse-msg' + (isErr ? ' err' : ' ok');
+  }
+
+  function load() {
+    fetchApi(API + '/warehouse/plate-stock')
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.statusText);
+        return r.json();
+      })
+      .then(function (d) {
+        document.getElementById('quantity').textContent = d.quantity;
+        document.getElementById('reserved').textContent = d.reserved;
+        document.getElementById('available').textContent = d.available;
+      })
+      .catch(function (e) {
+        document.getElementById('quantity').textContent = '—';
+        document.getElementById('reserved').textContent = '—';
+        document.getElementById('available').textContent = '—';
+        msg('Ошибка: ' + (e.message || ''), true);
+      });
+  }
+
+  document.getElementById('btnAdd').onclick = function () {
+    var inp = document.getElementById('addAmount');
+    var n = parseInt(inp.value, 10);
+    if (isNaN(n) || n < 1) {
+      msg('Введите число больше 0', true);
+      return;
+    }
+    fetchApi(API + '/warehouse/plate-stock/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: n })
+    })
+      .then(function (r) {
+        if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+        return r.json();
+      })
+      .then(function () {
+        msg('Добавлено ' + n + ' шт.');
+        load();
+        setTimeout(function () { msg(''); }, 3000);
+      })
+      .catch(function (e) {
+        msg('Ошибка: ' + (e.message || ''), true);
+      });
+  };
+
+  load();
+})();
+  </script>
+</body>
+</html>

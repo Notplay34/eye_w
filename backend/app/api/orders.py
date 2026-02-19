@@ -2,7 +2,7 @@ from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, delete, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -10,7 +10,7 @@ from app.core.logging_config import get_logger
 from app.api.auth import RequireFormAccess, RequireAnalyticsAccess, RequireOrdersListAccess, RequirePlateAccess, UserInfo
 
 logger = get_logger(__name__)
-from app.models import Order, OrderStatus, Payment, PaymentType, Employee, CashShift, ShiftStatus, CashRow
+from app.models import Order, OrderStatus, Payment, PaymentType, Employee, CashShift, ShiftStatus, CashRow, PlateStock, PlateReservation
 from pydantic import BaseModel
 
 from app.schemas.order import OrderCreate, OrderResponse, OrderDetailResponse
@@ -390,6 +390,21 @@ async def pay_extra(
     return {"order_id": order.id, "amount": body.amount, "type": "INCOME_PAVILION2"}
 
 
+async def _get_or_create_stock(db: AsyncSession) -> PlateStock:
+    r = await db.execute(select(PlateStock).limit(1))
+    row = r.scalar_one_or_none()
+    if not row:
+        row = PlateStock(quantity=0)
+        db.add(row)
+        await db.flush()
+    return row
+
+
+def _plate_quantity_from_order(order: Order) -> int:
+    fd = order.form_data or {}
+    return max(1, int(fd.get("plate_quantity") or 1))
+
+
 @router.patch("/{order_id}/status")
 async def update_order_status(
     order_id: int,
@@ -406,6 +421,37 @@ async def update_order_status(
             status_code=400,
             detail=f"Переход из {order.status.value} в {new_status.value} невозможен",
         )
+    qty = _plate_quantity_from_order(order) if order.need_plate else 0
+
+    # Резерв при переходе в изготовление
+    if order.status == OrderStatus.PAID and new_status == OrderStatus.PLATE_IN_PROGRESS and qty > 0:
+        stock = await _get_or_create_stock(db)
+        res_sum = (await db.execute(
+            select(func.coalesce(func.sum(PlateReservation.quantity), 0))
+        )).scalar_one() or 0
+        available = stock.quantity - int(res_sum)
+        if available < qty:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Недостаточно заготовок на складе. Доступно: {available}, нужно: {qty}",
+            )
+        db.add(PlateReservation(order_id=order.id, quantity=qty))
+        await db.flush()
+
+    # Списание и снятие резерва при завершении
+    if new_status == OrderStatus.COMPLETED and qty > 0:
+        await db.execute(delete(PlateReservation).where(PlateReservation.order_id == order.id))
+        stock = await _get_or_create_stock(db)
+        stock.quantity -= qty
+        db.add(stock)
+        await db.flush()
+        logger.info("Списание со склада: заказ %s, кол-во %s", order.id, qty)
+
+    # Снятие резерва при проблеме
+    if new_status == OrderStatus.PROBLEM and order.need_plate and qty > 0:
+        await db.execute(delete(PlateReservation).where(PlateReservation.order_id == order.id))
+        await db.flush()
+
     order.status = new_status
     db.add(order)
     return {"order_id": order.id, "public_id": order.public_id, "status": new_status.value}

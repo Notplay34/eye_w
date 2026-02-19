@@ -28,6 +28,7 @@
     .admin .text-muted { color: var(--text-muted); }
     .admin .filter-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
     .admin .filter-row select { padding: 0.4rem 0.6rem; min-width: 160px; }
+    .admin .filter-row input[type="date"] { padding: 0.4rem 0.6rem; }
     .admin .order-id-copy { cursor: pointer; }
     .admin .order-id-copy:hover { text-decoration: underline; color: var(--accent); }
     .admin .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 20; overflow: auto; padding: 1rem; }
@@ -55,6 +56,7 @@
         <span class="nav-group"><a href="index.html">Павильон 1</a></span>
         <span class="nav-group"><a href="plate-operator.html">Павильон 2</a></span>
         <span class="nav-group"><a href="plate-cash.html">Касса номеров</a></span>
+        <span class="nav-group"><a href="warehouse.html">Склад</a></span>
         <span class="nav-group"><a href="cash-shifts.html">Касса</a></span>
         <span class="nav-group"><a href="admin.html">Админка</a><a href="users.html">Аккаунты</a></span>
         <span class="nav-user" id="adminUserName"></span>
@@ -67,12 +69,24 @@
     <div class="admin-block" style="margin-bottom: 2rem;">
       <h2 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 0.75rem;">Аналитика</h2>
     <section id="sectionToday">
-      <h2>Сводка за сегодня</h2>
+      <h2>Сводка за день</h2>
+      <div class="filter-row">
+        <label>Дата с:</label>
+        <input type="date" id="todayDateFrom" title="Начало периода">
+        <label>по:</label>
+        <input type="date" id="todayDateTo" title="Конец периода">
+      </div>
       <div id="todayContent" class="loading">Загрузка…</div>
     </section>
 
     <section id="sectionMonth">
       <h2>Сводка за месяц</h2>
+      <div class="filter-row">
+        <label>Дата с:</label>
+        <input type="date" id="monthDateFrom" title="Начало периода">
+        <label>по:</label>
+        <input type="date" id="monthDateTo" title="Конец периода">
+      </div>
       <div id="monthContent" class="loading">Загрузка…</div>
     </section>
 
@@ -84,9 +98,25 @@
           <option value="day">День</option>
           <option value="month">Месяц</option>
         </select>
+        <label>Дата с:</label>
+        <input type="date" id="empDateFrom">
+        <label>по:</label>
+        <input type="date" id="empDateTo">
       </div>
       <div id="empAnalyticsContent" class="loading">Загрузка…</div>
     </section>
+
+    <div class="filter-row" style="margin-bottom:1rem;">
+      <label>Экспорт:</label>
+      <select id="exportPeriod">
+        <option value="day">Сводка за день</option>
+        <option value="month">Сводка за месяц</option>
+        <option value="employees">По сотрудникам</option>
+      </select>
+      <input type="date" id="exportDateFrom">
+      <input type="date" id="exportDateTo">
+      <button type="button" class="btn" id="btnExportCsv">Скачать CSV</button>
+    </div>
     </div>
 
     <div class="admin-block" style="margin-bottom: 2rem;">
@@ -157,9 +187,29 @@
         el.innerHTML = '<span class="error">' + (msg || 'Ошибка загрузки') + '</span>';
       }
 
+      function getDateParams(prefix) {
+        var fromEl = document.getElementById(prefix + 'DateFrom');
+        var toEl = document.getElementById(prefix + 'DateTo');
+        var fromVal = fromEl && fromEl.value ? fromEl.value : '';
+        var toVal = toEl && toEl.value ? toEl.value : '';
+        var q = [];
+        if (fromVal) q.push('date_from=' + encodeURIComponent(fromVal));
+        if (toVal) q.push('date_to=' + encodeURIComponent(toVal));
+        return q.length ? '?' + q.join('&') : '';
+      }
+      function getEmpDateParams() {
+        var fromEl = document.getElementById('empDateFrom');
+        var toEl = document.getElementById('empDateTo');
+        var fromVal = fromEl && fromEl.value ? fromEl.value : '';
+        var toVal = toEl && toEl.value ? toEl.value : '';
+        var q = ['period=' + getEmpPeriod()];
+        if (fromVal) q.push('date_from=' + encodeURIComponent(fromVal));
+        if (toVal) q.push('date_to=' + encodeURIComponent(toVal));
+        return '?' + q.join('&');
+      }
       async function loadToday() {
         try {
-          const r = await fetchApi(API_BASE + '/analytics/today');
+          const r = await fetchApi(API_BASE + '/analytics/today' + getDateParams('today'));
           if (!r.ok) throw new Error(r.statusText);
           const d = await r.json();
           todayEl.innerHTML = [
@@ -178,7 +228,7 @@
 
       async function loadMonth() {
         try {
-          const r = await fetchApi(API_BASE + '/analytics/month');
+          const r = await fetchApi(API_BASE + '/analytics/month' + getDateParams('month'));
           if (!r.ok) throw new Error(r.statusText);
           const d = await r.json();
           monthEl.innerHTML = [
@@ -202,7 +252,7 @@
       async function loadEmpAnalytics() {
         try {
           var period = getEmpPeriod();
-          const r = await fetchApi(API_BASE + '/analytics/employees?period=' + encodeURIComponent(period));
+          const r = await fetchApi(API_BASE + '/analytics/employees' + getEmpDateParams());
           if (!r.ok) throw new Error(r.statusText);
           const d = await r.json();
           if (!d.employees || !d.employees.length) {
@@ -220,6 +270,42 @@
       if (document.getElementById('empPeriodFilter')) {
         document.getElementById('empPeriodFilter').addEventListener('change', loadEmpAnalytics);
       }
+      ['todayDateFrom', 'todayDateTo'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', loadToday);
+      });
+      ['monthDateFrom', 'monthDateTo'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', loadMonth);
+      });
+      ['empDateFrom', 'empDateTo'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', loadEmpAnalytics);
+      });
+      document.getElementById('btnExportCsv').addEventListener('click', function () {
+        var period = document.getElementById('exportPeriod').value;
+        var fromEl = document.getElementById('exportDateFrom');
+        var toEl = document.getElementById('exportDateTo');
+        var fromVal = fromEl && fromEl.value ? fromEl.value : '';
+        var toVal = toEl && toEl.value ? toEl.value : '';
+        var q = ['format=csv', 'period=' + period];
+        if (fromVal) q.push('date_from=' + encodeURIComponent(fromVal));
+        if (toVal) q.push('date_to=' + encodeURIComponent(toVal));
+        var url = API_BASE + '/analytics/export?' + q.join('&');
+        fetchApi(url).then(function (r) {
+          if (!r.ok) throw new Error(r.statusText);
+          return r.text();
+        }).then(function (text) {
+          var blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'analytics_' + period + '.csv';
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }).catch(function (e) {
+          alert('Ошибка экспорта: ' + (e.message || ''));
+        });
+      });
 
       var orderStatusFilter = document.getElementById('orderStatusFilter');
       function getOrdersUrl() {

@@ -123,3 +123,30 @@ async def login(
 @router.get("/me", response_model=UserInfo)
 async def me(current_user: UserInfo = Depends(RequireFormAccess)):
     return current_user
+
+
+class ChangePasswordBody(BaseModel):
+    old_password: str
+    new_password: str
+
+
+@router.post("/change-password")
+async def change_password(
+    body: ChangePasswordBody,
+    current_user: UserInfo = Depends(RequireFormAccess),
+    db: AsyncSession = Depends(get_db),
+):
+    """Смена пароля текущего пользователя (требуется старый пароль)."""
+    from app.services.auth_service import hash_password
+    if not body.new_password or len(body.new_password) < 4:
+        raise HTTPException(status_code=400, detail="Новый пароль должен быть не менее 4 символов")
+    result = await db.execute(select(Employee).where(Employee.id == current_user.id))
+    emp = result.scalar_one_or_none()
+    if not emp or not emp.password_hash:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    if not verify_password(body.old_password, emp.password_hash):
+        raise HTTPException(status_code=400, detail="Неверный текущий пароль")
+    emp.password_hash = hash_password(body.new_password)
+    db.add(emp)
+    await db.flush()
+    return {"ok": True}

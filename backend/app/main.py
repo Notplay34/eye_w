@@ -17,6 +17,7 @@ from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
 from app.api.cash import router as cash_router
 from app.api.price_list import router as price_list_router
+from app.api.warehouse import router as warehouse_router
 from app.services.auth_service import hash_password
 
 setup_logging()
@@ -114,6 +115,22 @@ async def ensure_columns_and_enum():
                     ALTER TABLE plate_cash_rows ADD COLUMN created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc');
                 END IF;
             END $$;
+        """))
+        # Склад заготовок номеров
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS plate_stock (
+                id SERIAL PRIMARY KEY,
+                quantity INTEGER NOT NULL DEFAULT 0,
+                updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+            );
+        """))
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS plate_reservations (
+                id SERIAL PRIMARY KEY,
+                order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+                quantity INTEGER NOT NULL,
+                created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+            );
         """))
     try:
         async with engine.connect() as conn:
@@ -216,6 +233,7 @@ app.include_router(price_list_router)
 app.include_router(analytics_router)
 app.include_router(auth_router)
 app.include_router(employees_router)
+app.include_router(warehouse_router)
 
 
 @app.get("/health")
