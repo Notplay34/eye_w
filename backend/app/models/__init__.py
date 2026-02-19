@@ -5,9 +5,11 @@ from app.models.order import Order, OrderStatus
 from app.models.payment import Payment, PaymentType
 from app.models.plate import Plate, PlateStatus
 from app.models.cash_shift import CashShift, ShiftStatus
+from app.models.cash_row import CashRow
 
 __all__ = [
     "Base",
+    "CashRow",
     "CashShift",
     "ShiftStatus",
     "DocumentPrice",

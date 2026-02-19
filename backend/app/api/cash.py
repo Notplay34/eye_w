@@ -9,9 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.logging_config import get_logger
 from app.api.auth import RequireCashAccess, UserInfo
-from app.models import CashShift, ShiftStatus, Payment
+from app.models import CashShift, ShiftStatus, Payment, CashRow
 from app.models.employee import EmployeeRole
-from app.schemas.cash import ShiftOpen, ShiftClose, ShiftResponse, ShiftCurrentResponse
+from app.schemas.cash import (
+    ShiftOpen, ShiftClose, ShiftResponse, ShiftCurrentResponse,
+    CashRowCreate, CashRowUpdate, CashRowResponse,
+)
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/cash", tags=["cash"])
@@ -145,3 +148,98 @@ async def close_shift(
     await db.flush()
     logger.info("Закрыта смена id=%s павильон=%s", shift.id, shift.pavilion)
     return _shift_to_response(shift)
+
+
+# --- Таблица кассы (редактируемые строки: ФИО, заявление, госпошлина, ДКП, страховка, номера, итого) ---
+
+def _cash_row_to_dict(row: CashRow) -> dict:
+    return {
+        "id": row.id,
+        "client_name": row.client_name or "",
+        "application": float(row.application),
+        "state_duty": float(row.state_duty),
+        "dkp": float(row.dkp),
+        "insurance": float(row.insurance),
+        "plates": float(row.plates),
+        "total": float(row.total),
+    }
+
+
+@router.get("/rows", response_model=list)
+async def list_cash_rows(
+    limit: int = Query(500, ge=1, le=2000),
+    db: AsyncSession = Depends(get_db),
+    user: UserInfo = Depends(RequireCashAccess),
+):
+    """Список строк таблицы кассы (последние сверху)."""
+    q = select(CashRow).order_by(CashRow.id.desc()).limit(limit)
+    r = await db.execute(q)
+    rows = r.scalars().all()
+    return [_cash_row_to_dict(row) for row in rows]
+
+
+@router.post("/rows", response_model=dict)
+async def create_cash_row(
+    body: CashRowCreate,
+    db: AsyncSession = Depends(get_db),
+    user: UserInfo = Depends(RequireCashAccess),
+):
+    """Добавить строку в таблицу кассы."""
+    row = CashRow(
+        client_name=body.client_name or "",
+        application=body.application,
+        state_duty=body.state_duty,
+        dkp=body.dkp,
+        insurance=body.insurance,
+        plates=body.plates,
+        total=body.total,
+    )
+    db.add(row)
+    await db.flush()
+    return _cash_row_to_dict(row)
+
+
+@router.patch("/rows/{row_id}", response_model=dict)
+async def update_cash_row(
+    row_id: int,
+    body: CashRowUpdate,
+    db: AsyncSession = Depends(get_db),
+    user: UserInfo = Depends(RequireCashAccess),
+):
+    """Обновить ячейки строки кассы (передавать только изменённые поля)."""
+    r = await db.execute(select(CashRow).where(CashRow.id == row_id))
+    row = r.scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Строка не найдена")
+    if body.client_name is not None:
+        row.client_name = body.client_name
+    if body.application is not None:
+        row.application = body.application
+    if body.state_duty is not None:
+        row.state_duty = body.state_duty
+    if body.dkp is not None:
+        row.dkp = body.dkp
+    if body.insurance is not None:
+        row.insurance = body.insurance
+    if body.plates is not None:
+        row.plates = body.plates
+    if body.total is not None:
+        row.total = body.total
+    db.add(row)
+    await db.flush()
+    return _cash_row_to_dict(row)
+
+
+@router.delete("/rows/{row_id}", status_code=204)
+async def delete_cash_row(
+    row_id: int,
+    db: AsyncSession = Depends(get_db),
+    user: UserInfo = Depends(RequireCashAccess),
+):
+    """Удалить строку из таблицы кассы."""
+    r = await db.execute(select(CashRow).where(CashRow.id == row_id))
+    row = r.scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Строка не найдена")
+    await db.delete(row)
+    await db.flush()

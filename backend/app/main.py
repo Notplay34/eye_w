@@ -76,6 +76,19 @@ async def ensure_columns_and_enum():
                 END IF;
             END $$;
         """))
+        # Таблица cash_rows — таблица кассы (ФИО, заявление, госпошлина, ДКП, страховка, номера, итого)
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS cash_rows (
+                id SERIAL PRIMARY KEY,
+                client_name VARCHAR(255) NOT NULL DEFAULT '',
+                application NUMERIC(12,2) NOT NULL DEFAULT 0,
+                state_duty NUMERIC(12,2) NOT NULL DEFAULT 0,
+                dkp NUMERIC(12,2) NOT NULL DEFAULT 0,
+                insurance NUMERIC(12,2) NOT NULL DEFAULT 0,
+                plates NUMERIC(12,2) NOT NULL DEFAULT 0,
+                total NUMERIC(12,2) NOT NULL DEFAULT 0
+            );
+        """))
     try:
         async with engine.connect() as conn:
             await conn.execute(text("ALTER TYPE employeerole ADD VALUE 'ROLE_MANAGER'"))

@@ -4,41 +4,38 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>if(!localStorage.getItem('eye_w_token'))window.location.replace('login.html');</script>
-  <title>Касса и смены</title>
+  <title>Касса</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .cash-page { max-width: 800px; margin: 0 auto; padding: 1rem; }
-    .cash-header { margin-bottom: 1.5rem; }
-    .cash-header h1 { font-family: var(--font-serif); margin: 0 0 0.25rem; }
-    .cash-header p { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
-    .cash-pavilion { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.25rem; margin-bottom: 1.25rem; }
-    .cash-pavilion h2 { margin: 0 0 1rem; font-size: 1.1rem; }
-    .cash-current { margin-bottom: 1rem; padding: 0.75rem; background: var(--surface2); border-radius: 8px; }
-    .cash-current.open { border-left: 4px solid var(--accent); }
-    .cash-current.closed { border-left: 4px solid var(--text-muted); }
-    .cash-current p { margin: 0.25rem 0; font-size: 0.95rem; }
-    .cash-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-top: 1rem; }
-    .cash-actions label { display: block; font-size: 0.85rem; margin-bottom: 0.25rem; color: var(--text-muted); }
-    .cash-actions input[type="number"] { width: 140px; padding: 0.5rem 0.6rem; border: 1px solid var(--border); border-radius: 6px; }
-    .cash-actions .btn { margin-right: 0.5rem; }
-    .cash-list { margin-top: 1rem; }
-    .cash-list table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    .cash-list th, .cash-list td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border); }
-    .cash-list th { background: var(--surface2); font-weight: 600; }
-    .nav-links { display: flex; gap: 1rem; font-size: 0.9rem; margin-top: 0.5rem; }
+    .cash-page { max-width: 1200px; margin: 0 auto; padding: 1rem; }
+    .cash-toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .cash-table-wrap { overflow-x: auto; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .cash-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .cash-table th, .cash-table td { padding: 0.35rem 0.5rem; border: 1px solid var(--border); }
+    .cash-table th { background: var(--surface2); font-weight: 600; white-space: nowrap; }
+    .cash-table td { vertical-align: middle; }
+    .cash-table input { width: 100%; min-width: 60px; padding: 0.35rem 0.5rem; border: 1px solid transparent; border-radius: 4px; box-sizing: border-box; font: inherit; }
+    .cash-table input:hover { border-color: var(--border); }
+    .cash-table input:focus { outline: none; border-color: var(--accent); }
+    .cash-table .col-name { min-width: 180px; }
+    .cash-table .col-num { width: 90px; text-align: right; }
+    .cash-table .col-num input { text-align: right; }
+    .cash-table .col-del { width: 36px; padding: 0.25rem; text-align: center; }
+    .cash-table .col-del button { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.25rem; font-size: 1rem; line-height: 1; }
+    .cash-table .col-del button:hover { color: #b91c1c; }
+    .nav-links { display: flex; gap: 1rem; font-size: 0.9rem; flex-wrap: wrap; }
     .nav-links a { color: var(--accent); text-decoration: none; }
     .nav-links a:hover { text-decoration: underline; }
-    .error-msg { color: #b91c1c; font-size: 0.9rem; margin-top: 0.5rem; }
-    .status-open { color: var(--accent); font-weight: 500; }
-    .status-closed { color: var(--text-muted); }
+    .cash-msg { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; }
+    .cash-msg.err { color: #b91c1c; }
   </style>
 </head>
 <body>
   <div class="cash-page">
     <header class="header">
       <div>
-        <h1 class="header__title">Касса и смены</h1>
-        <p class="header__subtitle">Открытие и закрытие смен по павильонам</p>
+        <h1 class="header__title">Касса</h1>
+        <p class="header__subtitle">Таблица: фамилия и инициалы, заявление, госпошлина, ДКП, страховка, номера, итого</p>
       </div>
       <div class="nav-links">
         <span id="userName"></span>
@@ -49,33 +46,29 @@
       </div>
     </header>
 
-    <div id="pavilion1" class="cash-pavilion">
-      <h2>Павильон 1</h2>
-      <div id="current1" class="cash-current"></div>
-      <div id="actions1" class="cash-actions"></div>
-      <p id="err1" class="error-msg" style="display:none;"></p>
-      <div id="list1" class="cash-list" style="display:none;"></div>
+    <div class="cash-toolbar">
+      <button type="button" class="btn btn--primary" id="btnAddRow">Добавить строку</button>
+      <span id="cashMsg" class="cash-msg"></span>
     </div>
 
-    <div id="pavilion2" class="cash-pavilion">
-      <h2>Павильон 2</h2>
-      <div id="current2" class="cash-current"></div>
-      <div id="actions2" class="cash-actions"></div>
-      <p id="err2" class="error-msg" style="display:none;"></p>
-      <div id="list2" class="cash-list" style="display:none;"></div>
-    </div>
-  </div>
-
-  <div id="modalClose" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:100; align-items:center; justify-content:center;" class="modal">
-    <div style="background:var(--surface); padding:1.5rem; border-radius:var(--radius); max-width:360px; width:90%;">
-      <h3 style="margin:0 0 1rem;">Закрыть смену</h3>
-      <p style="margin:0 0 0.5rem; font-size:0.9rem; color:var(--text-muted);">Павильон <strong id="modalPavilion"></strong>. Введите посчитанную сумму в кассе, ₽</p>
-      <label style="display:block; margin-bottom:0.35rem;">Сумма в кассе, ₽</label>
-      <input type="number" id="modalClosingBalance" min="0" step="0.01" value="0" style="width:100%; padding:0.6rem; margin-bottom:1rem; box-sizing:border-box;">
-      <div style="display:flex; gap:0.5rem;">
-        <button type="button" class="btn btn--primary" id="modalCloseSubmit">Закрыть смену</button>
-        <button type="button" class="btn btn--secondary" id="modalCloseCancel">Отмена</button>
-      </div>
+    <div class="cash-table-wrap">
+      <table class="cash-table" id="cashTable">
+        <thead>
+          <tr>
+            <th class="col-name">Фамилия и инициалы</th>
+            <th class="col-num">Заявление</th>
+            <th class="col-num">Госпошлина</th>
+            <th class="col-num">ДКП</th>
+            <th class="col-num">Страховка</th>
+            <th class="col-num">Номера</th>
+            <th class="col-num">Итого</th>
+            <th class="col-del"></th>
+          </tr>
+        </thead>
+        <tbody id="cashBody">
+          <tr><td colspan="8" class="cash-msg">Загрузка…</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 
@@ -89,100 +82,179 @@
   var user = window.getUser();
   if (user) document.getElementById('userName').textContent = user.name || '';
 
-  function showErr(pavilion, msg) {
-    var el = document.getElementById('err' + pavilion);
-    el.textContent = msg || '';
-    el.style.display = msg ? 'block' : 'none';
+  var rows = [];
+  var saveTimer = null;
+
+  function msg(t, isErr) {
+    var el = document.getElementById('cashMsg');
+    el.textContent = t || '';
+    el.className = 'cash-msg' + (isErr ? ' err' : '');
   }
 
-  function renderCurrent(pavilion, data) {
-    var cur = document.getElementById('current' + pavilion);
-    var actions = document.getElementById('actions' + pavilion);
-    showErr(pavilion, '');
-    if (!data || data.error) {
-      cur.innerHTML = '<p>Не удалось загрузить данные. ' + (data && data.detail ? data.detail : '') + '</p>';
-      cur.className = 'cash-current';
-      actions.innerHTML = '';
-      return;
-    }
-    var shift = data.shift;
-    var total = data.total_in_shift || 0;
-    if (!shift) {
-      cur.className = 'cash-current';
-      cur.innerHTML = '<p>Смена не открыта.</p>';
-      actions.innerHTML = '<div><label>Начальный остаток, ₽</label><input type="number" id="openBalance' + pavilion + '" min="0" step="0.01" value="0"></div>' +
-        '<button type="button" class="btn btn--primary" data-open-pavilion="' + pavilion + '">Открыть смену</button>';
-      actions.querySelector('[data-open-pavilion]').onclick = function () { openShift(pavilion); };
-      return;
-    }
-    cur.className = 'cash-current open';
-    cur.innerHTML = '<p><span class="status-open">Смена открыта</span> (id ' + shift.id + ')</p>' +
-      '<p>Открыта: ' + (shift.opened_at ? new Date(shift.opened_at).toLocaleString('ru') : '') + '</p>' +
-      '<p><strong>Сумма по смене (оплаты):</strong> ' + total.toFixed(2) + ' ₽</p>' +
-      '<p>Начальный остаток: ' + (shift.opening_balance != null ? Number(shift.opening_balance).toFixed(2) : '0') + ' ₽</p>';
-    actions.innerHTML = '<button type="button" class="btn btn--primary" data-close-shift="' + shift.id + '" data-pavilion="' + pavilion + '">Закрыть смену</button>';
-    actions.querySelector('[data-close-shift]').onclick = function () {
-      document.getElementById('modalPavilion').textContent = pavilion;
-      document.getElementById('modalClosingBalance').value = (total + (shift.opening_balance != null ? Number(shift.opening_balance) : 0)).toFixed(2);
-      document.getElementById('modalClose').style.display = 'flex';
-      document.getElementById('modalClose').dataset.shiftId = shift.id;
-    };
+  function numVal(v) {
+    var n = parseFloat(String(v).replace(',', '.'));
+    return isNaN(n) ? 0 : n;
   }
 
-  function openShift(pavilion) {
-    var input = document.getElementById('openBalance' + pavilion);
-    var balance = input ? parseFloat(input.value) || 0 : 0;
-    fetchApi(API + '/cash/shifts', {
-      method: 'POST',
-      body: JSON.stringify({ pavilion: pavilion, opening_balance: balance })
-    }).then(function (r) {
-      if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
-      return r.json();
-    }).then(function () {
-      loadPavilion(pavilion);
-    }).catch(function (e) {
-      showErr(pavilion, e.message || 'Ошибка открытия смены');
-    });
-  }
-
-  function loadPavilion(pavilion) {
-    fetchApi(API + '/cash/shifts/current?pavilion=' + pavilion)
-      .then(function (r) {
-        if (r.status === 403) return { error: true, detail: 'Нет доступа к кассе этого павильона' };
-        return r.json();
-      })
-      .then(function (data) {
-        if (data && data.detail && data.error === undefined) data.error = true;
-        renderCurrent(pavilion, data);
-      })
-      .catch(function () {
-        renderCurrent(pavilion, { error: true, detail: 'Ошибка сети' });
-      });
-  }
-
-  document.getElementById('modalCloseSubmit').onclick = function () {
-    var shiftId = document.getElementById('modalClose').dataset.shiftId;
-    var balance = parseFloat(document.getElementById('modalClosingBalance').value) || 0;
-    fetchApi(API + '/cash/shifts/' + shiftId + '/close', {
+  function patchRow(rowId, payload) {
+    return fetchApi(API + '/cash/rows/' + rowId, {
       method: 'PATCH',
-      body: JSON.stringify({ closing_balance: balance })
+      body: JSON.stringify(payload)
     }).then(function (r) {
       if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
       return r.json();
-    }).then(function () {
-      document.getElementById('modalClose').style.display = 'none';
-      loadPavilion(1);
-      loadPavilion(2);
+    });
+  }
+
+  function updateRowInList(id, data) {
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].id === id) {
+        rows[i] = data;
+        return;
+      }
+    }
+  }
+
+  function makeInput(row, key, isNum) {
+    var val = row[key];
+    var input = document.createElement('input');
+    input.type = isNum ? 'number' : 'text';
+    input.step = '0.01';
+    input.min = '0';
+    input.value = isNum ? (val != null ? Number(val) : '') : (val || '');
+    input.dataset.key = key;
+    input.dataset.rowId = String(row.id);
+    input.addEventListener('blur', function () {
+      var tr = this.closest('tr');
+      var id = parseInt(this.dataset.rowId, 10);
+      var k = this.dataset.key;
+      var v = isNum ? numVal(this.value) : this.value.trim();
+      var prev = rows.find(function (r) { return r.id === id; });
+      if (!prev) return;
+      var prevVal = prev[k];
+      if (isNum && prevVal === v && k !== 'client_name') return;
+      if (!isNum && String(prevVal || '') === String(v)) return;
+      var payload = {};
+      payload[k] = isNum ? v : v;
+      if (['application', 'state_duty', 'dkp', 'insurance', 'plates'].indexOf(k) >= 0 && tr) {
+        var sum = 0;
+        ['application', 'state_duty', 'dkp', 'insurance', 'plates'].forEach(function (key) {
+          var inp = tr.querySelector('input[data-key="' + key + '"]');
+          if (inp) sum += numVal(inp.value);
+        });
+        payload.total = sum;
+      }
+      patchRow(id, payload).then(function (updated) {
+        updateRowInList(id, updated);
+        var totalInp = tr && tr.querySelector('input[data-key="total"]');
+        if (totalInp && payload.total !== undefined) totalInp.value = payload.total;
+        msg('Сохранено');
+        setTimeout(function () { msg(''); }, 2000);
+      }).catch(function (e) {
+        msg('Ошибка: ' + (e.message || 'не удалось сохранить'), true);
+      });
+    });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') this.blur();
+    });
+    return input;
+  }
+
+  function recalcTotal(row) {
+    var a = numVal(row.application);
+    var s = numVal(row.state_duty);
+    var d = numVal(row.dkp);
+    var i = numVal(row.insurance);
+    var p = numVal(row.plates);
+    return a + s + d + i + p;
+  }
+
+  function renderRow(row) {
+    var tr = document.createElement('tr');
+    tr.dataset.rowId = String(row.id);
+    var tdName = document.createElement('td');
+    tdName.className = 'col-name';
+    tdName.appendChild(makeInput(row, 'client_name', false));
+    tr.appendChild(tdName);
+    ['application', 'state_duty', 'dkp', 'insurance', 'plates', 'total'].forEach(function (key) {
+      var td = document.createElement('td');
+      td.className = 'col-num';
+      td.appendChild(makeInput(row, key, true));
+      tr.appendChild(td);
+    });
+    var tdDel = document.createElement('td');
+    tdDel.className = 'col-del';
+    var btnDel = document.createElement('button');
+    btnDel.textContent = '×';
+    btnDel.title = 'Удалить строку';
+    btnDel.onclick = function () {
+      if (!confirm('Удалить строку?')) return;
+      fetchApi(API + '/cash/rows/' + row.id, { method: 'DELETE' }).then(function (r) {
+        if (r.status === 204 || r.ok) {
+          rows = rows.filter(function (r) { return r.id !== row.id; });
+          render();
+        } else return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+      }).catch(function (e) {
+        msg('Ошибка: ' + (e.message || 'не удалось удалить'), true);
+      });
+    };
+    tdDel.appendChild(btnDel);
+    tr.appendChild(tdDel);
+    return tr;
+  }
+
+  function render() {
+    var tbody = document.getElementById('cashBody');
+    tbody.innerHTML = '';
+    if (rows.length === 0) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td colspan="8" class="cash-msg">Нет строк. Нажмите «Добавить строку».</td>';
+      tbody.appendChild(tr);
+      return;
+    }
+    rows.forEach(function (row) {
+      tbody.appendChild(renderRow(row));
+    });
+  }
+
+  function load() {
+    fetchApi(API + '/cash/rows').then(function (r) {
+      if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+      return r.json();
+    }).then(function (data) {
+      rows = data || [];
+      render();
     }).catch(function (e) {
-      alert(e.message || 'Ошибка закрытия смены');
+      document.getElementById('cashBody').innerHTML = '<tr><td colspan="8" class="cash-msg err">Ошибка загрузки: ' + (e.message || '') + '</td></tr>';
+    });
+  }
+
+  document.getElementById('btnAddRow').onclick = function () {
+    fetchApi(API + '/cash/rows', {
+      method: 'POST',
+      body: JSON.stringify({
+        client_name: '',
+        application: 0,
+        state_duty: 0,
+        dkp: 0,
+        insurance: 0,
+        plates: 0,
+        total: 0
+      })
+    }).then(function (r) {
+      if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+      return r.json();
+    }).then(function (newRow) {
+      rows.unshift(newRow);
+      render();
+      msg('Строка добавлена');
+      setTimeout(function () { msg(''); }, 2000);
+    }).catch(function (e) {
+      msg('Ошибка: ' + (e.message || 'не удалось добавить'), true);
     });
   };
-  document.getElementById('modalCloseCancel').onclick = function () {
-    document.getElementById('modalClose').style.display = 'none';
-  };
 
-  loadPavilion(1);
-  loadPavilion(2);
+  load();
 })();
   </script>
 </body>
