@@ -8,7 +8,7 @@ ALLOWED_TRANSITIONS: dict[OrderStatus, list[OrderStatus]] = {
         OrderStatus.COMPLETED,
         OrderStatus.PROBLEM,
     ],
-    OrderStatus.PLATE_IN_PROGRESS: [OrderStatus.PLATE_READY, OrderStatus.PROBLEM],
+    OrderStatus.PLATE_IN_PROGRESS: [OrderStatus.PLATE_READY, OrderStatus.COMPLETED, OrderStatus.PROBLEM],
     OrderStatus.PLATE_READY: [OrderStatus.COMPLETED, OrderStatus.PROBLEM],
     OrderStatus.COMPLETED: [],
     OrderStatus.PROBLEM: [],

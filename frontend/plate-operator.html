@@ -99,12 +99,9 @@
     COMPLETED: 'Завершён'
   };
 
-  var ALLOWED_NEXT = {
-    PAID: [{ status: 'PLATE_IN_PROGRESS', label: 'В работу' }, { status: 'PLATE_READY', label: 'Изготовлен' }, { status: 'PROBLEM', label: 'Проблема' }],
-    PLATE_IN_PROGRESS: [{ status: 'PLATE_READY', label: 'Изготовлен' }, { status: 'PROBLEM', label: 'Проблема' }],
-    PLATE_READY: [{ status: 'COMPLETED', label: 'Выдан' }, { status: 'PROBLEM', label: 'Проблема' }],
-    PROBLEM: []
-  };
+  // Кнопки: Выдано (-> COMPLETED), Удалить (-> PROBLEM, с подтверждением)
+  var CAN_ISSUE = ['PAID', 'PLATE_IN_PROGRESS', 'PLATE_READY'];
+  var CAN_DELETE = ['PAID', 'PLATE_IN_PROGRESS', 'PLATE_READY'];
 
   function fmt(n) { return new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 0 }).format(n) + ' ₽'; }
 
@@ -130,18 +127,17 @@
         table.style.display = 'table';
         orders.forEach(function (o) {
           var row = document.createElement('tr');
-          var nextBtns = (ALLOWED_NEXT[o.status] || []).map(function (n) {
-            return '<button type="button" class="btn btn-sm btn--secondary" data-order="' + o.id + '" data-status="' + n.status + '">' + n.label + '</button>';
-          }).join('');
+          var issueBtn = CAN_ISSUE.indexOf(o.status) >= 0 ? '<button type="button" class="btn btn-sm btn--primary" data-order="' + o.id + '" data-status="COMPLETED">Выдано</button>' : '';
+          var deleteBtn = CAN_DELETE.indexOf(o.status) >= 0 ? '<button type="button" class="btn btn-sm btn--secondary" data-order="' + o.id + '" data-status="PROBLEM" data-delete="1">Удалить</button>' : '';
           var payBtn = (o.debt || 0) > 0 ? '<button type="button" class="btn btn-sm btn--primary" data-order="' + o.id + '" data-public-id="' + (o.public_id || o.id) + '" data-pay="1">Доплата</button>' : '';
           row.innerHTML =
             '<td>' + (o.public_id || o.id) + '</td>' +
             '<td>' + (o.client || '—') + '</td>' +
-            '<td>' + fmt(o.total_amount || 0) + '</td>' +
+            '<td>' + fmt(o.plate_amount != null ? o.plate_amount : o.total_amount) + '</td>' +
             '<td class="paid">' + fmt(o.total_paid || 0) + '</td>' +
             '<td class="' + ((o.debt || 0) > 0 ? 'debt' : '') + '">' + fmt(o.debt || 0) + '</td>' +
             '<td><span class="status status-' + o.status + '">' + (STATUS_LABELS[o.status] || o.status) + '</span></td>' +
-            '<td><div class="btn-group">' + nextBtns + payBtn + '</div></td>';
+            '<td><div class="btn-group">' + issueBtn + deleteBtn + payBtn + '</div></td>';
           tbody.appendChild(row);
         });
         return orders;
@@ -151,6 +147,10 @@
           btn.addEventListener('click', function () {
             var id = parseInt(btn.getAttribute('data-order'), 10);
             var status = btn.getAttribute('data-status');
+            var isDelete = btn.getAttribute('data-delete') === '1';
+            if (isDelete) {
+              if (!confirm('Удалить заказ из списка? Заказ будет переведён в статус «Проблема» и больше не отобразится здесь.')) return;
+            }
             fetchApi(API + '/orders/' + id + '/status', {
               method: 'PATCH',
               body: JSON.stringify({ status: status })

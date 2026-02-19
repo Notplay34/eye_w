@@ -168,35 +168,62 @@ async def pay_order(
     )
 
 
+def _plate_amount_from_order(order: Order) -> Decimal:
+    """Сумма только по номерам: number.docx из form_data + доплаты (INCOME_PAVILION2) не хранятся в заказе, считаются по платежам."""
+    fd = order.form_data or {}
+    docs = fd.get("documents") or []
+    total = Decimal("0")
+    for d in docs:
+        t = (d.get("template") or "").strip().lower()
+        if t == _NUMBER_TEMPLATE:
+            total += Decimal(str(d.get("price") or 0))
+    return total
+
+
 @router.get("/plate-list")
 async def list_orders_for_plate(
     db: AsyncSession = Depends(get_db),
     _user: UserInfo = Depends(RequirePlateAccess),
 ):
-    """Список заказов с номерами для павильона 2: клиент, сумма, оплачено, долг."""
+    """Список заказов с номерами для павильона 2: клиент, сумма (только номера), оплачено, долг."""
     from sqlalchemy import func
 
     q = (
         select(Order, func.coalesce(func.sum(Payment.amount), 0).label("total_paid"))
         .outerjoin(Payment, Payment.order_id == Order.id)
         .where(Order.need_plate == True)
-        .where(Order.status.in_([OrderStatus.PAID, OrderStatus.PLATE_IN_PROGRESS, OrderStatus.PLATE_READY, OrderStatus.PROBLEM]))
+        .where(Order.status.in_([OrderStatus.PAID, OrderStatus.PLATE_IN_PROGRESS, OrderStatus.PLATE_READY]))
         .group_by(Order.id)
         .order_by(Order.created_at.desc())
         .limit(100)
     )
     result = await db.execute(q)
     rows = result.all()
+    # Доплаты за номера (INCOME_PAVILION2) по заказам
+    order_ids = [order.id for order, _ in rows]
+    pay_extra_sums = {}
+    if order_ids:
+        from sqlalchemy import and_
+        q2 = (
+            select(Payment.order_id, func.coalesce(func.sum(Payment.amount), 0))
+            .where(and_(Payment.order_id.in_(order_ids), Payment.type == PaymentType.INCOME_PAVILION2))
+            .group_by(Payment.order_id)
+        )
+        r2 = await db.execute(q2)
+        for oid, s in r2.all():
+            pay_extra_sums[oid] = float(s or 0)
     out = []
     for order, total_paid in rows:
         total_paid = float(total_paid or 0)
         fd = order.form_data or {}
         client = fd.get("client_fio") or fd.get("client_legal_name") or "—"
+        plate_only = _plate_amount_from_order(order) + Decimal(str(pay_extra_sums.get(order.id, 0)))
         out.append({
             "id": order.id,
             "public_id": order.public_id,
             "status": order.status.value,
             "total_amount": float(order.total_amount),
+            "plate_amount": float(plate_only),
             "income_pavilion2": float(order.income_pavilion2),
             "client": client,
             "total_paid": total_paid,
