@@ -21,6 +21,7 @@
     <nav class="account__sidebar">
       <a href="index.html">Оформление заказов</a>
       <a href="plate-operator.html" id="linkPlate" style="display:none;">Изготовление номеров</a>
+      <a href="plate-cash.html" id="linkPlateCash" style="display:none;">Касса номеров</a>
       <a href="cash-shifts.html" id="linkCash" style="display:none;">Касса и смены</a>
       <a href="admin.html" id="linkAdmin" style="display:none;">Админка</a>
       <a href="users.html" id="linkUsers" style="display:none;">Управление аккаунтами</a>
@@ -40,6 +41,7 @@
       document.getElementById('userInfo').textContent = 'Вы вошли как ' + (user.name || user.login || '');
       if (['ROLE_PLATE_OPERATOR', 'ROLE_MANAGER', 'ROLE_ADMIN'].indexOf(user.role) >= 0) {
         document.getElementById('linkPlate').style.display = 'block';
+        document.getElementById('linkPlateCash').style.display = 'block';
       }
       if (['ROLE_OPERATOR', 'ROLE_PLATE_OPERATOR', 'ROLE_MANAGER', 'ROLE_ADMIN'].indexOf(user.role) >= 0) {
         document.getElementById('linkCash').style.display = 'block';

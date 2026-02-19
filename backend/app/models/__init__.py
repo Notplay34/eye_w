@@ -6,10 +6,12 @@ from app.models.payment import Payment, PaymentType
 from app.models.plate import Plate, PlateStatus
 from app.models.cash_shift import CashShift, ShiftStatus
 from app.models.cash_row import CashRow
+from app.models.plate_cash_row import PlateCashRow
 
 __all__ = [
     "Base",
     "CashRow",
+    "PlateCashRow",
     "CashShift",
     "ShiftStatus",
     "DocumentPrice",

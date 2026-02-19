@@ -40,6 +40,7 @@
       </div>
       <div class="nav-links">
         <span id="userName"></span>
+        <a href="plate-cash.html">Касса номеров</a>
         <a href="index.html">Форма документов</a>
         <a href="account.html" id="linkAccount" style="display:none">Аккаунты</a>
         <a href="login.html" onclick="window.clearAuth()">Выйти</a>
@@ -54,7 +55,6 @@
             <th>ID</th>
             <th>Клиент</th>
             <th>Сумма</th>
-            <th>Оплачено</th>
             <th>Долг</th>
             <th>Статус</th>
             <th>Действия</th>
@@ -134,7 +134,6 @@
             '<td>' + (o.public_id || o.id) + '</td>' +
             '<td>' + (o.client || '—') + '</td>' +
             '<td>' + fmt(o.plate_amount != null ? o.plate_amount : o.total_amount) + '</td>' +
-            '<td class="paid">' + fmt(o.total_paid || 0) + '</td>' +
             '<td class="' + ((o.debt || 0) > 0 ? 'debt' : '') + '">' + fmt(o.debt || 0) + '</td>' +
             '<td><span class="status status-' + o.status + '">' + (STATUS_LABELS[o.status] || o.status) + '</span></td>' +
             '<td><div class="btn-group">' + issueBtn + deleteBtn + payBtn + '</div></td>';

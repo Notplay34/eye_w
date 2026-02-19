@@ -16,6 +16,7 @@ from app.api.documents import router as documents_router
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
 from app.api.cash import router as cash_router
+from app.api.plate_cash import router as plate_cash_router
 from app.api.price_list import router as price_list_router
 from app.services.auth_service import hash_password
 
@@ -87,6 +88,14 @@ async def ensure_columns_and_enum():
                 insurance NUMERIC(12,2) NOT NULL DEFAULT 0,
                 plates NUMERIC(12,2) NOT NULL DEFAULT 0,
                 total NUMERIC(12,2) NOT NULL DEFAULT 0
+            );
+        """))
+        # Касса номеров: фамилия и сумма (сумма может быть отрицательной)
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS plate_cash_rows (
+                id SERIAL PRIMARY KEY,
+                client_name VARCHAR(255) NOT NULL DEFAULT '',
+                amount NUMERIC(12,2) NOT NULL DEFAULT 0
             );
         """))
     try:
@@ -185,6 +194,7 @@ app.add_middleware(
 
 app.include_router(orders_router)
 app.include_router(cash_router)
+app.include_router(plate_cash_router)
 app.include_router(documents_router)
 app.include_router(price_list_router)
 app.include_router(analytics_router)
