@@ -1,5 +1,6 @@
 """API касс и смен: открытие/закрытие смены по павильонам."""
 from decimal import Decimal
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
@@ -30,7 +31,7 @@ def _shift_to_response(shift: CashShift) -> dict:
     }
 
 
-async def _get_current_shift(db: AsyncSession, pavilion: int) -> CashShift | None:
+async def _get_current_shift(db: AsyncSession, pavilion: int) -> Optional[CashShift]:
     q = select(CashShift).where(
         CashShift.pavilion == pavilion,
         CashShift.status == ShiftStatus.OPEN,
@@ -99,8 +100,8 @@ async def get_current_shift(
 
 @router.get("/shifts", response_model=list)
 async def list_shifts(
-    pavilion: int | None = Query(None, ge=1, le=2),
-    status: str | None = Query(None),
+    pavilion: Optional[int] = Query(None, ge=1, le=2),
+    status: Optional[str] = Query(None),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
     user: UserInfo = Depends(RequireCashAccess),
