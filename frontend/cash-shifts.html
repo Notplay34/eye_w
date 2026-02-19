@@ -26,6 +26,8 @@
     .nav-links { display: flex; gap: 1rem; font-size: 0.9rem; flex-wrap: wrap; }
     .nav-links a { color: var(--accent); text-decoration: none; }
     .nav-links a:hover { text-decoration: underline; }
+    .cash-table tfoot td { background: var(--surface2); font-weight: 600; border-top: 2px solid var(--text); padding: 0.6rem 0.75rem; }
+    .cash-table tfoot .col-num { text-align: right; }
     .cash-msg { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem; }
     .cash-msg.err { color: #b91c1c; }
   </style>
@@ -68,6 +70,14 @@
         <tbody id="cashBody">
           <tr><td colspan="8" class="cash-msg">Загрузка…</td></tr>
         </tbody>
+        <tfoot id="cashFoot">
+          <tr>
+            <td class="col-name">Итого в кассе</td>
+            <td class="col-num" colspan="5"></td>
+            <td class="col-num" id="cashTotalCell">0 ₽</td>
+            <td class="col-del"></td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   </div>
@@ -148,6 +158,7 @@
         updateRowInList(id, updated);
         var totalInp = tr && tr.querySelector('input[data-key="total"]');
         if (totalInp && payload.total !== undefined) totalInp.value = payload.total;
+        renderTotal();
         msg('Сохранено');
         setTimeout(function () { msg(''); }, 2000);
       }).catch(function (e) {
@@ -203,6 +214,12 @@
     return tr;
   }
 
+  function renderTotal() {
+    var total = rows.reduce(function (sum, r) { return sum + numVal(r.total); }, 0);
+    var el = document.getElementById('cashTotalCell');
+    if (el) el.textContent = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(total) + ' ₽';
+  }
+
   function render() {
     var tbody = document.getElementById('cashBody');
     tbody.innerHTML = '';
@@ -210,11 +227,13 @@
       var tr = document.createElement('tr');
       tr.innerHTML = '<td colspan="8" class="cash-msg">Нет строк. Нажмите «Добавить строку».</td>';
       tbody.appendChild(tr);
+      renderTotal();
       return;
     }
     rows.forEach(function (row) {
       tbody.appendChild(renderRow(row));
     });
+    renderTotal();
   }
 
   function load() {
