@@ -13,6 +13,12 @@ from app.models import PlateStock, PlateReservation
 router = APIRouter(prefix="/warehouse", tags=["warehouse"])
 
 
+@router.get("")
+async def warehouse_root():
+    """Проверка, что модуль склада подключён."""
+    return {"status": "ok", "module": "warehouse"}
+
+
 async def _get_or_create_stock(db: AsyncSession) -> PlateStock:
     r = await db.execute(select(PlateStock).limit(1))
     row = r.scalar_one_or_none()
