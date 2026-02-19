@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import RequirePlateAccess, UserInfo
 from app.core.database import get_db
-from app.models import PlateStock, PlateReservation, Order
+from datetime import datetime
+from app.models import PlateStock, PlateReservation, PlateDefect, Order
 
 router = APIRouter(prefix="/warehouse", tags=["warehouse"])
 
@@ -50,11 +51,19 @@ async def get_plate_stock(
     )
     rows = (await db.execute(q)).all()
     reserved_breakdown = [{"total_amount": float(r.total_amount), "quantity": r.quantity} for r in rows]
+    # Браков за текущий месяц
+    now = datetime.utcnow()
+    month_start = datetime(now.year, now.month, 1)
+    q_defects = select(func.coalesce(func.sum(PlateDefect.quantity), 0)).where(
+        PlateDefect.created_at >= month_start
+    )
+    defects_month = int((await db.execute(q_defects)).scalar_one() or 0)
     return {
         "quantity": stock.quantity,
         "reserved": reserved,
         "available": max(0, stock.quantity - reserved),
         "reserved_breakdown": reserved_breakdown,
+        "defects_this_month": defects_month,
     }
 
 
@@ -83,11 +92,12 @@ async def add_plate_defect(
     db: AsyncSession = Depends(get_db),
     _user: UserInfo = Depends(RequirePlateAccess),
 ):
-    """Списать 1 шт как брак (вычитается из остатка)."""
+    """Списать 1 шт как брак (вычитается из остатка, учитывается в счётчике за месяц)."""
     stock = await _get_or_create_stock(db)
     if stock.quantity < 1:
         raise HTTPException(status_code=400, detail="На складе нет заготовок для списания брака")
     stock.quantity -= 1
     db.add(stock)
+    db.add(PlateDefect(quantity=1))
     await db.flush()
     return {"quantity": stock.quantity, "defect": 1}

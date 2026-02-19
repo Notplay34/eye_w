@@ -141,7 +141,7 @@
           var sep = (issueBtn && (CAN_DELETE.indexOf(o.status) >= 0 || (o.debt || 0) > 0)) ? '<span class="btn-group__sep"></span>' : '';
           var deleteBtn = CAN_DELETE.indexOf(o.status) >= 0 ? '<button type="button" class="btn btn-sm btn--danger-like" data-order="' + o.id + '" data-status="PROBLEM" data-delete="1">Удалить</button>' : '';
           var payBtn = (o.debt || 0) > 0 ? '<button type="button" class="btn btn-sm btn--secondary" data-order="' + o.id + '" data-public-id="' + (o.public_id || o.id) + '" data-pay="1">Доплата</button>' : '';
-          var docLink = '<a href="#" class="doc-link" title="Заявление на номера" data-order-id="' + o.id + '" data-doc="zaiavlenie.docx" aria-label="Заявление на номера">&#128196;</a>';
+          var docLink = '<a href="#" class="doc-link" title="Заявление на номера" data-order-id="' + o.id + '" data-doc="zaiavlenie_na_nomera.docx" aria-label="Заявление на номера">&#128196;</a>';
           row.innerHTML =
             '<td>' + (o.public_id || o.id) + '</td>' +
             '<td>' + (o.client || '—') + '</td>' +
@@ -208,7 +208,7 @@
           a.addEventListener('click', function (e) {
             e.preventDefault();
             var orderId = parseInt(a.getAttribute('data-order-id'), 10);
-            var template = a.getAttribute('data-doc') || 'zaiavlenie.docx';
+            var template = a.getAttribute('data-doc') || 'zaiavlenie_na_nomera.docx';
             var url = API + '/orders/' + orderId + '/documents/' + encodeURIComponent(template);
             fetchApi(url).then(function (r) {
               if (!r.ok) throw new Error('Не удалось открыть документ');

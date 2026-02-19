@@ -62,7 +62,9 @@
 
     <div class="warehouse-card">
       <h2>Списание</h2>
-      <p class="warehouse-stat-label" style="margin-bottom:0.5rem;">При нажатии «Выдано» в павильоне 2 заказ списывается со склада. Брак — списать 1 шт из остатка.</p>
+      <div class="warehouse-stat" id="defectsMonth" style="font-size:1.25rem;">—</div>
+      <div class="warehouse-stat-label">Браков за месяц</div>
+      <p class="warehouse-stat-label" style="margin:0.75rem 0 0.5rem;">При нажатии «Выдано» в павильоне 2 заказ списывается со склада. Брак — списать 1 шт из остатка.</p>
       <div class="warehouse-row">
         <button type="button" class="btn btn--secondary" id="btnDefect">Добавить брак (−1 шт)</button>
       </div>
@@ -107,6 +109,7 @@
         document.getElementById('quantity').textContent = d.quantity;
         document.getElementById('reserved').textContent = d.reserved;
         document.getElementById('available').textContent = d.available;
+        document.getElementById('defectsMonth').textContent = d.defects_this_month != null ? d.defects_this_month : '—';
         var breakdown = d.reserved_breakdown || [];
         var el = document.getElementById('reservedBreakdown');
         if (breakdown.length === 0) {
@@ -127,6 +130,7 @@
         document.getElementById('reserved').textContent = '—';
         document.getElementById('available').textContent = '—';
         document.getElementById('reservedBreakdown').textContent = '';
+        document.getElementById('defectsMonth').textContent = '—';
         msg('Ошибка: ' + (e.message || ''), true);
       });
   }

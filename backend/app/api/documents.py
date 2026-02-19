@@ -21,6 +21,7 @@ ALLOWED_TEMPLATES = [
     "obiasnenie.docx",
     "prokuratura.docx",
     "zaiavlenie.docx",
+    "zaiavlenie_na_nomera.docx",  # заявление на номера (для павильона 2)
 ]
 
 

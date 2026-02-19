@@ -132,6 +132,14 @@ async def ensure_columns_and_enum():
                 created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
             );
         """))
+        # Учёт браков (для счётчика за месяц)
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS plate_defects (
+                id SERIAL PRIMARY KEY,
+                quantity INTEGER NOT NULL DEFAULT 1,
+                created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+            );
+        """))
     try:
         async with engine.connect() as conn:
             await conn.execute(text("ALTER TYPE employeerole ADD VALUE 'ROLE_MANAGER'"))
