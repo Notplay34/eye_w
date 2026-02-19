@@ -15,6 +15,14 @@ git pull
 bash deploy/setup_server.sh
 ```
 
+**Если после обновления не работают новые разделы** (например Склад, касса номеров) — сервер возвращает HTML вместо данных. Обновите конфиг nginx и перезагрузите его:
+
+```bash
+cp /opt/eye_w/deploy/nginx-eye_w.conf /etc/nginx/sites-available/eye_w
+nginx -t && systemctl reload nginx
+systemctl restart eye_w
+```
+
 Готово. Откройте сайт в браузере.
 
 ---

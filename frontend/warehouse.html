@@ -76,10 +76,22 @@
   }
 
   function load() {
+    var hint = ' Проверьте nginx: в location добавьте warehouse (см. deploy/nginx-eye_w.conf), затем nginx -t && systemctl reload nginx.';
     fetchApi(API + '/warehouse/plate-stock')
       .then(function (r) {
-        if (!r.ok) throw new Error(r.statusText);
-        return r.json();
+        return r.text().then(function (text) {
+          var t = (text || '').trim();
+          if (t.indexOf('<') === 0) {
+            throw new Error('Сервер вернул HTML вместо данных.' + hint);
+          }
+          if (!r.ok) {
+            try { var j = JSON.parse(t); throw new Error(j.detail || r.statusText); } catch (e) { if (e.message && e.message !== r.statusText) throw e; }
+            throw new Error(r.statusText || 'Ошибка ' + r.status);
+          }
+          try { return JSON.parse(t); } catch (_) {
+            throw new Error('Ответ не JSON.' + hint);
+          }
+        });
       })
       .then(function (d) {
         document.getElementById('quantity').textContent = d.quantity;
@@ -107,8 +119,15 @@
       body: JSON.stringify({ amount: n })
     })
       .then(function (r) {
-        if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
-        return r.json();
+        return r.text().then(function (text) {
+          var t = (text || '').trim();
+          if (t.indexOf('<') === 0) throw new Error('Сервер вернул HTML. Обновите nginx (добавьте warehouse в location).');
+          if (!r.ok) {
+            try { var j = JSON.parse(t); throw new Error(j.detail || r.statusText); } catch (e) { if (e.message && e.message !== r.statusText) throw e; }
+            throw new Error(r.statusText);
+          }
+          return t ? JSON.parse(t) : {};
+        });
       })
       .then(function () {
         msg('Добавлено ' + n + ' шт.');
