@@ -16,7 +16,6 @@ from app.api.documents import router as documents_router
 from app.api.analytics import router as analytics_router
 from app.api.auth import router as auth_router
 from app.api.cash import router as cash_router
-from app.api.plate_cash import router as plate_cash_router
 from app.api.price_list import router as price_list_router
 from app.services.auth_service import hash_password
 
@@ -194,7 +193,6 @@ app.add_middleware(
 
 app.include_router(orders_router)
 app.include_router(cash_router)
-app.include_router(plate_cash_router)
 app.include_router(documents_router)
 app.include_router(price_list_router)
 app.include_router(analytics_router)

@@ -161,14 +161,14 @@
             }).then(function (r) {
               if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || 'Ошибка'); });
               if (status === 'COMPLETED') {
-                return fetchApi(API + '/plate-cash/rows', {
+                return fetchApi(API + '/cash/plate-rows', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ client_name: clientName || '—', amount: plateAmount })
                 }).then(function (pr) {
                   if (!pr.ok) {
                     loadOrders();
-                    alert('Статус обновлён, но строка в кассу номеров не добавилась. Проверьте раздел «Касса номеров» — на сервере в nginx должен быть путь plate-cash/.');
+                    alert('Статус обновлён, но строка в кассу номеров не добавилась. Добавьте вручную в «Касса номеров».');
                     return;
                   }
                   pr.json().then(function () { loadOrders(); }).catch(function () {

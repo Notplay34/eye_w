@@ -104,7 +104,7 @@
   }
 
   function patchRow(rowId, payload) {
-    return fetchApi(API + '/plate-cash/rows/' + rowId, {
+    return fetchApi(API + '/cash/plate-rows/' + rowId, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -177,7 +177,7 @@
     btnDel.title = 'Удалить строку';
     btnDel.onclick = function () {
       if (!confirm('Удалить строку?')) return;
-      fetchApi(API + '/plate-cash/rows/' + row.id, { method: 'DELETE' }).then(function (r) {
+      fetchApi(API + '/cash/plate-rows/' + row.id, { method: 'DELETE' }).then(function (r) {
         if (r.status === 204 || r.ok) {
           rows = rows.filter(function (r) { return r.id !== row.id; });
           render();
@@ -207,8 +207,8 @@
   }
 
   function load() {
-    var hint = ' На сервере: в nginx добавьте plate-cash/ в location и выполните nginx -t && systemctl reload nginx; перезапустите бэкенд: systemctl restart eye_w.';
-    fetchApi(API + '/plate-cash/rows')
+    var hint = ' Проверьте, что бэкенд запущен (systemctl restart eye_w).';
+    fetchApi(API + '/cash/plate-rows')
       .then(function (r) {
         return r.text().then(function (text) {
           var t = (text || '').trim();
@@ -237,7 +237,7 @@
   }
 
   document.getElementById('btnAddRow').onclick = function () {
-    fetchApi(API + '/plate-cash/rows', {
+    fetchApi(API + '/cash/plate-rows', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ client_name: '', amount: 0 })
