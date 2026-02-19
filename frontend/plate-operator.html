@@ -22,6 +22,8 @@
     .plate-table .status-PLATE_READY { background: #d1fae5; color: #065f46; }
     .plate-table .status-PROBLEM { background: #fee2e2; color: #991b1b; }
     .plate-table .debt { color: #b91c1c; font-weight: 600; }
+    .plate-table .doc-link { display: inline-flex; align-items: center; justify-content: center; width: 2rem; height: 2rem; border-radius: 6px; background: var(--surface2); color: var(--accent); text-decoration: none; font-size: 1.1rem; }
+    .plate-table .doc-link:hover { background: var(--accent); color: var(--surface); }
     .plate-table .paid { color: var(--income); }
     .btn-sm { padding: 0.35rem 0.6rem; font-size: 0.85rem; }
     .btn-group { display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center; }
@@ -64,7 +66,7 @@
             <th>ID</th>
             <th>Клиент</th>
             <th>Сумма</th>
-            <th>Долг</th>
+            <th title="Заявление на номера">Заявл.</th>
             <th>Статус</th>
             <th>Действия</th>
           </tr>
@@ -139,11 +141,12 @@
           var sep = (issueBtn && (CAN_DELETE.indexOf(o.status) >= 0 || (o.debt || 0) > 0)) ? '<span class="btn-group__sep"></span>' : '';
           var deleteBtn = CAN_DELETE.indexOf(o.status) >= 0 ? '<button type="button" class="btn btn-sm btn--danger-like" data-order="' + o.id + '" data-status="PROBLEM" data-delete="1">Удалить</button>' : '';
           var payBtn = (o.debt || 0) > 0 ? '<button type="button" class="btn btn-sm btn--secondary" data-order="' + o.id + '" data-public-id="' + (o.public_id || o.id) + '" data-pay="1">Доплата</button>' : '';
+          var docLink = '<a href="#" class="doc-link" title="Заявление на номера" data-order-id="' + o.id + '" data-doc="zaiavlenie.docx" aria-label="Заявление на номера">&#128196;</a>';
           row.innerHTML =
             '<td>' + (o.public_id || o.id) + '</td>' +
             '<td>' + (o.client || '—') + '</td>' +
             '<td>' + fmt(o.plate_amount != null ? o.plate_amount : o.total_amount) + '</td>' +
-            '<td class="' + ((o.debt || 0) > 0 ? 'debt' : '') + '">' + fmt(o.debt || 0) + '</td>' +
+            '<td>' + docLink + '</td>' +
             '<td><span class="status status-' + o.status + '">' + (STATUS_LABELS[o.status] || o.status) + '</span></td>' +
             '<td><div class="btn-group">' + issueBtn + sep + deleteBtn + payBtn + '</div></td>';
           tbody.appendChild(row);
@@ -199,6 +202,21 @@
             document.getElementById('modalAmount').value = '';
             document.getElementById('modalPay').style.display = 'flex';
             document.getElementById('modalPay').dataset.orderId = id;
+          });
+        });
+        document.querySelectorAll('.doc-link').forEach(function (a) {
+          a.addEventListener('click', function (e) {
+            e.preventDefault();
+            var orderId = parseInt(a.getAttribute('data-order-id'), 10);
+            var template = a.getAttribute('data-doc') || 'zaiavlenie.docx';
+            var url = API + '/orders/' + orderId + '/documents/' + encodeURIComponent(template);
+            fetchApi(url).then(function (r) {
+              if (!r.ok) throw new Error('Не удалось открыть документ');
+              return r.blob();
+            }).then(function (blob) {
+              var u = URL.createObjectURL(blob);
+              window.open(u, '_blank', 'noopener');
+            }).catch(function (err) { alert(err.message || 'Ошибка'); });
           });
         });
       })

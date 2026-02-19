@@ -3,7 +3,7 @@ from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.auth import RequireFormAccess, UserInfo
+from app.api.auth import RequireFormAccess, RequireOrdersListAccess, UserInfo
 from app.core.database import get_db
 from app.models import Order
 from app.services.docx_service import render_docx, TEMPLATES_DIR
@@ -33,7 +33,7 @@ async def get_order_document(
     order_id: int,
     template_name: str,
     db: AsyncSession = Depends(get_db),
-    _user: UserInfo = Depends(RequireFormAccess),
+    _user: UserInfo = Depends(RequireOrdersListAccess),
 ):
     if not _template_allowed(template_name):
         raise HTTPException(status_code=404, detail="Шаблон не найден или недоступен")

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import RequirePlateAccess, UserInfo
 from app.core.database import get_db
-from app.models import PlateStock, PlateReservation
+from app.models import PlateStock, PlateReservation, Order
 
 router = APIRouter(prefix="/warehouse", tags=["warehouse"])
 
@@ -39,13 +39,22 @@ async def get_plate_stock(
     db: AsyncSession = Depends(get_db),
     _user: UserInfo = Depends(RequirePlateAccess),
 ):
-    """Текущий остаток и зарезервировано."""
+    """Текущий остаток, зарезервировано (разбивка по невыданным заказам: сумма заказа → кол-во шт)."""
     stock = await _get_or_create_stock(db)
     reserved = await _reserved_total(db)
+    # Разбивка: по каждому заказу с резервом — total_amount и quantity (для отображения "3000 ₽ 2 шт, 1500 ₽ 1 шт")
+    q = (
+        select(Order.total_amount, PlateReservation.quantity)
+        .join(PlateReservation, PlateReservation.order_id == Order.id)
+        .order_by(Order.total_amount.desc())
+    )
+    rows = (await db.execute(q)).all()
+    reserved_breakdown = [{"total_amount": float(r.total_amount), "quantity": r.quantity} for r in rows]
     return {
         "quantity": stock.quantity,
         "reserved": reserved,
         "available": max(0, stock.quantity - reserved),
+        "reserved_breakdown": reserved_breakdown,
     }
 
 
@@ -67,3 +76,18 @@ async def add_plate_stock(
     db.add(stock)
     await db.flush()
     return {"quantity": stock.quantity, "added": body.amount}
+
+
+@router.post("/plate-stock/defect")
+async def add_plate_defect(
+    db: AsyncSession = Depends(get_db),
+    _user: UserInfo = Depends(RequirePlateAccess),
+):
+    """Списать 1 шт как брак (вычитается из остатка)."""
+    stock = await _get_or_create_stock(db)
+    if stock.quantity < 1:
+        raise HTTPException(status_code=400, detail="На складе нет заготовок для списания брака")
+    stock.quantity -= 1
+    db.add(stock)
+    await db.flush()
+    return {"quantity": stock.quantity, "defect": 1}
