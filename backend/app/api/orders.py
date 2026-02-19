@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,7 +10,7 @@ from app.core.logging_config import get_logger
 from app.api.auth import RequireFormAccess, RequireAnalyticsAccess, RequireOrdersListAccess, RequirePlateAccess, UserInfo
 
 logger = get_logger(__name__)
-from app.models import Order, OrderStatus, Payment, PaymentType, Employee, CashShift, ShiftStatus
+from app.models import Order, OrderStatus, Payment, PaymentType, Employee, CashShift, ShiftStatus, CashRow
 from pydantic import BaseModel
 
 from app.schemas.order import OrderCreate, OrderResponse, OrderDetailResponse
@@ -35,6 +36,41 @@ async def _current_shift_id(db: AsyncSession, pavilion: int) -> Optional[int]:
     )
     r = await db.execute(q)
     return r.scalar_one_or_none()
+
+
+# Шаблоны для разбивки по графам кассы: заявление, ДКП, номера
+_DKP_TEMPLATES = frozenset(("dkp.docx", "dkp_pieces.docx", "dkp_dar.docx"))
+_NUMBER_TEMPLATE = "number.docx"
+
+
+def _order_cash_row_amounts(order: Order):
+    """Считает суммы по графам кассы из заказа (form_data.documents + state_duty, income_pavilion2)."""
+    fd = order.form_data or {}
+    docs = fd.get("documents") or []
+    application = Decimal("0")
+    dkp = Decimal("0")
+    plates = Decimal("0")
+    for d in docs:
+        t = (d.get("template") or "").strip().lower()
+        price = Decimal(str(d.get("price") or 0))
+        if t in _DKP_TEMPLATES:
+            dkp += price
+        elif t == _NUMBER_TEMPLATE:
+            plates += price
+        else:
+            application += price  # заявление и прочие документы
+    state_duty = order.state_duty_amount or Decimal("0")
+    plates += order.income_pavilion2 or Decimal("0")  # доплата за номера
+    total = order.total_amount or Decimal("0")
+    return {
+        "client_name": (fd.get("client_fio") or fd.get("client_legal_name") or "").strip() or "—",
+        "application": application,
+        "state_duty": state_duty,
+        "dkp": dkp,
+        "insurance": Decimal("0"),
+        "plates": plates,
+        "total": total,
+    }
 
 
 @router.post("", response_model=OrderResponse)
@@ -110,7 +146,21 @@ async def pay_order(
     order.status = OrderStatus.PAID
     db.add(order)
     await db.flush()
-    logger.info("Оплата принята по заказу id=%s", order.id)
+    # Строка в кассу: ФИО и суммы по графам (заявление, госпошлина, ДКП, страховка, номера, итого)
+    amounts = _order_cash_row_amounts(order)
+    db.add(
+        CashRow(
+            client_name=amounts["client_name"],
+            application=amounts["application"],
+            state_duty=amounts["state_duty"],
+            dkp=amounts["dkp"],
+            insurance=amounts["insurance"],
+            plates=amounts["plates"],
+            total=amounts["total"],
+        )
+    )
+    await db.flush()
+    logger.info("Оплата принята по заказу id=%s, строка кассы добавлена", order.id)
     return PayOrderResponse(
         order_id=order.id,
         public_id=order.public_id,
@@ -294,8 +344,22 @@ async def pay_extra(
             shift_id=shift_2,
         )
     )
+    # Строка в кассу: доплата за номера (ФИО из заказа, номера и итого = сумма доплаты)
+    fd = order.form_data or {}
+    client_name = (fd.get("client_fio") or fd.get("client_legal_name") or "").strip() or "—"
+    db.add(
+        CashRow(
+            client_name=client_name,
+            application=Decimal("0"),
+            state_duty=Decimal("0"),
+            dkp=Decimal("0"),
+            insurance=Decimal("0"),
+            plates=Decimal(str(body.amount)),
+            total=Decimal(str(body.amount)),
+        )
+    )
     await db.flush()
-    logger.info("Доплата за номера id=%s сумма=%s", order.id, body.amount)
+    logger.info("Доплата за номера id=%s сумма=%s, строка кассы добавлена", order.id, body.amount)
     return {"order_id": order.id, "amount": body.amount, "type": "INCOME_PAVILION2"}
 
 
