@@ -254,6 +254,35 @@ body {
   border-color: var(--text-muted);
 }
 
+.form-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.form-history-list__item {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  margin-bottom: 0.35rem;
+  background: var(--surface2);
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+}
+
+.form-history-list__item:hover {
+  background: var(--accent);
+  color: var(--surface);
+  border-color: var(--accent);
+}
+
+.form-history-list__loading {
+  color: var(--text-muted);
+  padding: 0.5rem 0;
+}
+
 .form-section {
   border: none;
   margin: 0 0 1.25rem 0;

@@ -18,6 +18,7 @@ from app.api.auth import router as auth_router
 from app.api.cash import router as cash_router
 from app.api.price_list import router as price_list_router
 from app.api.warehouse import router as warehouse_router
+from app.api.form_history import router as form_history_router
 from app.services.auth_service import hash_password
 
 setup_logging()
@@ -140,6 +141,15 @@ async def ensure_columns_and_enum():
                 created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
             );
         """))
+        # История заполнения формы (при «Деньги получены»)
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS form_history (
+                id SERIAL PRIMARY KEY,
+                order_id INTEGER REFERENCES orders(id) ON DELETE SET NULL,
+                form_data JSONB,
+                created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+            );
+        """))
     try:
         async with engine.connect() as conn:
             await conn.execute(text("ALTER TYPE employeerole ADD VALUE 'ROLE_MANAGER'"))
@@ -242,6 +252,7 @@ app.include_router(analytics_router)
 app.include_router(auth_router)
 app.include_router(employees_router)
 app.include_router(warehouse_router)
+app.include_router(form_history_router)
 
 
 @app.get("/health")

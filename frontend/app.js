@@ -290,10 +290,102 @@
       btnAcceptCash.textContent = 'Оплата принята';
       window.lastOrderId = order.id;
       window.lastOrderDocuments = selectedDocuments.map(function (d) { return d.template; });
+      if (typeof loadFormHistory === 'function') loadFormHistory();
     } catch (e) {
       btnAcceptCash.disabled = false;
       btnAcceptCash.textContent = 'Принять наличные';
       showError(e.message || 'Не удалось создать заказ');
+    }
+  }
+
+  function setVal(inp, val) {
+    if (!inp) return;
+    if (inp.type === 'checkbox') inp.checked = !!val;
+    else inp.value = val != null ? String(val) : '';
+  }
+
+  function applyFormData(fd) {
+    if (!fd) return;
+    setVal(inputs.clientFio, fd.client_fio);
+    setVal(inputs.clientPassport, fd.client_passport);
+    setVal(inputs.clientAddress, fd.client_address);
+    setVal(inputs.clientPhone, fd.client_phone);
+    setVal(inputs.clientIsLegal, fd.client_is_legal);
+    setVal(inputs.clientLegalName, fd.client_legal_name);
+    setVal(inputs.clientInn, fd.client_inn);
+    setVal(inputs.clientOgrn, fd.client_ogrn);
+    setVal(inputs.hasSeller, !!(fd.seller_fio || fd.seller_passport || fd.seller_address));
+    setVal(inputs.sellerFio, fd.seller_fio);
+    setVal(inputs.sellerPassport, fd.seller_passport);
+    setVal(inputs.sellerAddress, fd.seller_address);
+    setVal(inputs.hasTrustee, !!(fd.trustee_fio || fd.trustee_passport || fd.trustee_basis));
+    setVal(inputs.trusteeFio, fd.trustee_fio);
+    setVal(inputs.trusteePassport, fd.trustee_passport);
+    setVal(inputs.trusteeBasis, fd.trustee_basis);
+    setVal(inputs.vin, fd.vin);
+    setVal(inputs.brandModel, fd.brand_model);
+    setVal(inputs.vehicleType, fd.vehicle_type);
+    setVal(inputs.year, fd.year);
+    setVal(inputs.engine, fd.engine);
+    setVal(inputs.chassis, fd.chassis);
+    setVal(inputs.body, fd.body);
+    setVal(inputs.color, fd.color);
+    setVal(inputs.srts, fd.srts);
+    setVal(inputs.plateNumber, fd.plate_number);
+    setVal(inputs.pts, fd.pts);
+    setVal(inputs.dkpDate, fd.dkp_date);
+    setVal(inputs.dkpNumber, fd.dkp_number);
+    setVal(inputs.dkpSummary, fd.dkp_summary);
+    setVal(inputs.summaDkp, fd.summa_dkp != null ? fd.summa_dkp : '');
+    setVal(inputs.stateDuty, fd.state_duty != null ? fd.state_duty : '');
+    setVal(inputs.needPlate, fd.need_plate);
+    setVal(inputs.plateQuantity, fd.plate_quantity != null ? fd.plate_quantity : 1);
+    var docs = fd.documents || [];
+    selectedDocuments = docs.map(function (d) {
+      return { template: d.template || '', label: d.label || d.template || '', price: num(d.price) };
+    });
+    toggleClientType();
+    var sellerBody = el('sellerBody');
+    var trusteeBody = el('trusteeBody');
+    if (sellerBody) sellerBody.classList.toggle('form-section__body--closed', !(inputs.hasSeller && inputs.hasSeller.checked));
+    if (trusteeBody) trusteeBody.classList.toggle('form-section__body--closed', !(inputs.hasTrustee && inputs.hasTrustee.checked));
+    renderDocumentsList();
+    syncFromMainForm();
+    updateDocList();
+  }
+
+  async function loadFormHistory() {
+    var listEl = el('formHistoryList');
+    var loadingEl = el('formHistoryLoading');
+    if (!listEl) return;
+    if (loadingEl) loadingEl.textContent = 'Загрузка…';
+    try {
+      var r = await fetchApi(API_BASE_URL + '/form-history?limit=50');
+      if (!r.ok) throw new Error(r.statusText);
+      var items = await r.json();
+      if (!Array.isArray(items)) items = [];
+      if (loadingEl) loadingEl.remove();
+      if (items.length === 0) {
+        listEl.innerHTML = '<li class="form-history-list__loading">Нет записей. Записи появляются после нажатия «Принять наличные».</li>';
+        return;
+      }
+      listEl.innerHTML = items.map(function (item) {
+        var fd = item.form_data || {};
+        var label = fd.client_fio || fd.client_legal_name || 'Без имени';
+        var dt = item.created_at ? new Date(item.created_at).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+        var dataAttr = 'data-form-data="' + (JSON.stringify(item.form_data || {}).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;')) + '"';
+        return '<li class="form-history-list__item" ' + dataAttr + '>' + (String(label).replace(/</g, '&lt;')) + ' — ' + dt + '</li>';
+      }).join('');
+      listEl.querySelectorAll('.form-history-list__item').forEach(function (li) {
+        li.addEventListener('click', function () {
+          try {
+            var data = this.getAttribute('data-form-data');
+            if (data) applyFormData(JSON.parse(data));
+          } catch (e) { }
+        });
+      });
+    } catch (e) {
+      if (listEl) listEl.innerHTML = '<li class="form-history-list__loading">Не удалось загрузить историю</li>';
     }
   }
 
@@ -439,6 +531,7 @@
     if (docSelect) docSelect.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addSelectedDocument(); } });
     if (btnAcceptCash) btnAcceptCash.addEventListener('click', acceptCash);
     if (btnPrint) btnPrint.addEventListener('click', doPrint);
+    loadFormHistory();
   }
 
   init();

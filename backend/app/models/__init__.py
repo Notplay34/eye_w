@@ -10,6 +10,7 @@ from app.models.plate_cash_row import PlateCashRow
 from app.models.plate_stock import PlateStock
 from app.models.plate_reservation import PlateReservation
 from app.models.plate_defect import PlateDefect
+from app.models.form_history import FormHistory
 
 __all__ = [
     "Base",
@@ -29,4 +30,5 @@ __all__ = [
     "PlateStock",
     "PlateReservation",
     "PlateDefect",
+    "FormHistory",
 ]

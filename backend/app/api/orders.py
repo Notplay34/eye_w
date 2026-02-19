@@ -10,7 +10,7 @@ from app.core.logging_config import get_logger
 from app.api.auth import RequireFormAccess, RequireAnalyticsAccess, RequireOrdersListAccess, RequirePlateAccess, UserInfo
 
 logger = get_logger(__name__)
-from app.models import Order, OrderStatus, Payment, PaymentType, Employee, CashShift, ShiftStatus, CashRow, PlateStock, PlateReservation
+from app.models import Order, OrderStatus, Payment, PaymentType, Employee, CashShift, ShiftStatus, CashRow, PlateStock, PlateReservation, FormHistory
 from pydantic import BaseModel
 
 from app.schemas.order import OrderCreate, OrderResponse, OrderDetailResponse
@@ -159,6 +159,9 @@ async def pay_order(
             total=amounts["total"],
         )
     )
+    await db.flush()
+    # Запись в историю заполнения формы (для подстановки по клику на странице формы)
+    db.add(FormHistory(order_id=order.id, form_data=order.form_data))
     await db.flush()
     logger.info("Оплата принята по заказу id=%s, строка кассы добавлена", order.id)
     return PayOrderResponse(

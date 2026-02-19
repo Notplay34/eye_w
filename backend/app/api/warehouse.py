@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.auth import RequirePlateAccess, UserInfo
 from app.core.database import get_db
 from datetime import datetime
-from app.models import PlateStock, PlateReservation, PlateDefect, Order
+from app.models import PlateStock, PlateReservation, PlateDefect, Order, OrderStatus
 
 router = APIRouter(prefix="/warehouse", tags=["warehouse"])
 
@@ -30,9 +30,9 @@ async def _get_or_create_stock(db: AsyncSession) -> PlateStock:
     return row
 
 
-async def _reserved_total(db: AsyncSession) -> int:
-    r = await db.execute(select(func.coalesce(func.sum(PlateReservation.quantity), 0)))
-    return int(r.scalar_one() or 0)
+def _plate_quantity_from_order(order: Order) -> int:
+    fd = order.form_data or {}
+    return max(1, int(fd.get("plate_quantity") or 1))
 
 
 @router.get("/plate-stock")
@@ -40,17 +40,20 @@ async def get_plate_stock(
     db: AsyncSession = Depends(get_db),
     _user: UserInfo = Depends(RequirePlateAccess),
 ):
-    """Текущий остаток, зарезервировано (разбивка по невыданным заказам: сумма заказа → кол-во шт)."""
+    """Текущий остаток, зарезервировано по невыданным заказам (PAID, PLATE_IN_PROGRESS, PLATE_READY)."""
     stock = await _get_or_create_stock(db)
-    reserved = await _reserved_total(db)
-    # Разбивка: по каждому заказу с резервом — total_amount и quantity (для отображения "3000 ₽ 2 шт, 1500 ₽ 1 шт")
-    q = (
-        select(Order.total_amount, PlateReservation.quantity)
-        .join(PlateReservation, PlateReservation.order_id == Order.id)
-        .order_by(Order.total_amount.desc())
+    # Считаем по фактическим заказам из списка невыданных, а не по таблице резервов (чтобы учитывались и старые заказы без записи)
+    unissued_statuses = [OrderStatus.PAID, OrderStatus.PLATE_IN_PROGRESS, OrderStatus.PLATE_READY]
+    q_orders = (
+        select(Order)
+        .where(Order.need_plate == True, Order.status.in_(unissued_statuses))
     )
-    rows = (await db.execute(q)).all()
-    reserved_breakdown = [{"total_amount": float(r.total_amount), "quantity": r.quantity} for r in rows]
+    orders_result = (await db.execute(q_orders)).scalars().all()
+    reserved = sum(_plate_quantity_from_order(o) for o in orders_result)
+    reserved_breakdown = [
+        {"total_amount": float(o.total_amount), "quantity": _plate_quantity_from_order(o)}
+        for o in sorted(orders_result, key=lambda o: o.total_amount, reverse=True)
+    ]
     # Браков за текущий месяц
     now = datetime.utcnow()
     month_start = datetime(now.year, now.month, 1)
