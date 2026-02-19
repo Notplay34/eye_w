@@ -106,7 +106,7 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="Павильоны МРЭО", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Павильоны МРЭО", version="1.0.0", lifespan=lifespan)
 
 
 @app.exception_handler(Exception)
