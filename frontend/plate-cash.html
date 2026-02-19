@@ -207,16 +207,24 @@
   }
 
   function load() {
+    var hint = ' На сервере: в nginx добавьте plate-cash/ в location и выполните nginx -t && systemctl reload nginx; перезапустите бэкенд: systemctl restart eye_w.';
     fetchApi(API + '/plate-cash/rows')
       .then(function (r) {
         return r.text().then(function (text) {
-          if (!r.ok) {
-            if (text.trim().indexOf('<') === 0) {
-              throw new Error('Сервер вернул страницу вместо данных. На сервере в nginx добавьте в location: plate-cash/ и выполните: nginx -t && systemctl reload nginx');
-            }
-            try { var j = JSON.parse(text); throw new Error(j.detail || r.statusText); } catch (e) { if (e.message) throw e; }
+          var t = (text || '').trim();
+          if (t.indexOf('<') === 0) {
+            throw new Error('Сервер вернул HTML вместо данных.' + hint);
           }
-          try { return JSON.parse(text); } catch (_) { throw new Error('Ответ не JSON'); }
+          if (!t) {
+            throw new Error('Пустой ответ от сервера.' + hint);
+          }
+          if (!r.ok) {
+            try { var j = JSON.parse(t); throw new Error(j.detail || r.statusText); } catch (e) { if (e.message && e.message !== r.statusText) throw e; }
+            throw new Error(r.statusText || 'Ошибка ' + r.status);
+          }
+          try { return JSON.parse(t); } catch (_) {
+            throw new Error('Ответ не JSON (возможно, nginx отдаёт страницу).' + hint);
+          }
         });
       })
       .then(function (data) {

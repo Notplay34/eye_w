@@ -166,8 +166,18 @@
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ client_name: clientName || '—', amount: plateAmount })
                 }).then(function (pr) {
-                  if (!pr.ok) return pr.text().then(function () { loadOrders(); });
+                  if (!pr.ok) {
+                    loadOrders();
+                    alert('Статус обновлён, но строка в кассу номеров не добавилась. Проверьте раздел «Касса номеров» — на сервере в nginx должен быть путь plate-cash/.');
+                    return;
+                  }
+                  pr.json().then(function () { loadOrders(); }).catch(function () {
+                    loadOrders();
+                    alert('Строка в кассу не добавилась (ответ сервера не JSON). Добавьте вручную в «Касса номеров»: ' + (clientName || '—') + ', ' + plateAmount + ' ₽');
+                  });
+                }).catch(function () {
                   loadOrders();
+                  alert('Строка в кассу номеров не добавилась. Добавьте вручную в «Касса номеров»: ' + (clientName || '—') + ', ' + plateAmount + ' ₽');
                 });
               }
               loadOrders();
