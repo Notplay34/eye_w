@@ -52,7 +52,7 @@ async def pay_order(
     order_id: int,
     employee_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db),
-    _user: UserInfo = Depends(RequireFormAccess),
+    user: UserInfo = Depends(RequireFormAccess),
 ):
     order = await _get_order(db, order_id)
     if not order:
@@ -62,13 +62,14 @@ async def pay_order(
             status_code=400,
             detail=f"Нельзя принять оплату для заказа со статусом {order.status.value}",
         )
+    emp_id = employee_id if employee_id is not None else user.id
     if order.state_duty_amount > 0:
         db.add(
             Payment(
                 order_id=order.id,
                 amount=order.state_duty_amount,
                 type=PaymentType.STATE_DUTY,
-                employee_id=employee_id,
+                employee_id=emp_id,
             )
         )
     if order.income_pavilion1 > 0:
@@ -77,7 +78,7 @@ async def pay_order(
                 order_id=order.id,
                 amount=order.income_pavilion1,
                 type=PaymentType.INCOME_PAVILION1,
-                employee_id=employee_id,
+                employee_id=emp_id,
             )
         )
     if order.income_pavilion2 > 0:
@@ -86,7 +87,7 @@ async def pay_order(
                 order_id=order.id,
                 amount=order.income_pavilion2,
                 type=PaymentType.INCOME_PAVILION2,
-                employee_id=employee_id,
+                employee_id=emp_id,
             )
         )
     order.status = OrderStatus.PAID

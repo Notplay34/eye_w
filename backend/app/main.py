@@ -40,6 +40,18 @@ async def ensure_columns_and_enum():
                 END IF;
             END $$;
         """))
+        # Колонка public_id в orders (если таблица создавалась старой версией)
+        await conn.execute(text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='orders' AND column_name='public_id') THEN
+                    ALTER TABLE orders ADD COLUMN public_id VARCHAR(36);
+                    UPDATE orders SET public_id = gen_random_uuid()::text WHERE public_id IS NULL;
+                    ALTER TABLE orders ALTER COLUMN public_id SET NOT NULL;
+                    CREATE UNIQUE INDEX IF NOT EXISTS ix_orders_public_id ON orders (public_id);
+                END IF;
+            END $$;
+        """))
     try:
         async with engine.connect() as conn:
             await conn.execute(text("ALTER TYPE employeerole ADD VALUE 'ROLE_MANAGER'"))
@@ -112,9 +124,17 @@ app = FastAPI(title="Павильоны МРЭО", version="1.0.0", lifespan=lif
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
     logger.exception("Необработанная ошибка: %s", exc)
+    detail = "Внутренняя ошибка сервера"
+    err_str = str(exc).lower()
+    if "duplicate key" in err_str or "unique constraint" in err_str:
+        detail = "Конфликт данных (дубликат). Обновите страницу и повторите."
+    elif "foreign key" in err_str or "violates foreign key" in err_str:
+        detail = "Ошибка связи с данными (например, сотрудник не найден). Выйдите и войдите снова."
+    elif "column" in err_str and "does not exist" in err_str:
+        detail = "Устаревшая схема БД. Перезапустите сервис: systemctl restart eye_w"
     return JSONResponse(
         status_code=500,
-        content={"detail": "Внутренняя ошибка сервера"},
+        content={"detail": detail},
     )
 
 app.add_middleware(
