@@ -24,6 +24,7 @@ dist/*.egg
 # IDE / OS
 .idea/
 .vscode/
+*.code-workspace
 *.swp
 .DS_Store
 Thumbs.db

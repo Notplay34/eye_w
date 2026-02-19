@@ -54,6 +54,27 @@ DEVELOPMENT_LOG.md используется для:
 
 ---
 
+### [2025-02-18] — Аудит: удаление неиспользуемых файлов
+
+**Тип изменения:** Refactor, Improvement
+
+**Описание:**  
+Аудит проекта. Удалены: commit_msg.txt (старое сообщение коммита), scripts/deploy.sh (дублирует INSTALL + deploy/setup_server.sh), scripts/patch_zaiavlenie_placeholders.py (однократный скрипт, шаблон уже обновлён). В .gitignore добавлено *.code-workspace. Остальные файлы проверены — все модули backend и frontend используются.
+
+**Причина:**  
+Очистка репозитория от мусора и устаревших скриптов.
+
+**Затронутые файлы:**  
+- commit_msg.txt (удалён)
+- scripts/deploy.sh (удалён)
+- scripts/patch_zaiavlenie_placeholders.py (удалён)
+- .gitignore (*.code-workspace)
+
+**Связь с PROJECT_CONTEXT.md:**  
+Без изменений.
+
+---
+
 ### [2025-02-18] — Готовность к запуску: меню, аналитика, навигация
 
 **Тип изменения:** Feature, Improvement
