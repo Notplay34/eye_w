@@ -1073,13 +1073,19 @@ body {
 }
 
 .plate-cash-table .col-name,
-.cash-table .col-name { min-width: 180px; }
+.cash-table .col-name { min-width: 120px; max-width: 220px; width: 18%; }
 .plate-cash-table .col-amount,
-.cash-table .col-num { width: 100px; text-align: right; }
+.cash-table .col-num { width: 82px; min-width: 82px; max-width: 100px; text-align: right; }
 .plate-cash-table .col-amount input,
-.cash-table .col-num input { text-align: right; }
+.cash-table .col-num input { text-align: right; min-width: 0; width: 100%; }
 .plate-cash-table .col-del,
-.cash-table .col-del { width: 36px; padding: var(--space-1); text-align: center; }
+.cash-table .col-del { width: 32px; padding: var(--space-1); text-align: center; }
+/* Касса (павильон 1): компактный вид, вписывается в общий стиль */
+.cash-table { font-size: var(--text-caption); table-layout: fixed; }
+.cash-table .col-name { min-width: 100px; max-width: 180px; }
+.cash-table th, .cash-table td { padding: var(--space-1) var(--space-2); }
+.cash-table input { padding: var(--space-1) var(--space-2); font-size: var(--text-caption); }
+.cash-table tfoot td { padding: var(--space-2) var(--space-2); }
 .plate-cash-table .col-del button,
 .cash-table .col-del button {
   background: none;

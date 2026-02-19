@@ -29,6 +29,14 @@ def _template_allowed(name: str) -> bool:
     return name in ALLOWED_TEMPLATES and (TEMPLATES_DIR / name).is_file()
 
 
+def _resolve_template(name: str) -> str:
+    """Возвращает имя файла шаблона. Для заявления на номера — fallback на zaiavlenie.docx если отдельного файла нет."""
+    if name == "zaiavlenie_na_nomera.docx" and not (TEMPLATES_DIR / name).is_file():
+        if (TEMPLATES_DIR / "zaiavlenie.docx").is_file():
+            return "zaiavlenie.docx"
+    return name
+
+
 @router.get("/{order_id}/documents/{template_name}", response_class=Response)
 async def get_order_document(
     order_id: int,
@@ -36,14 +44,15 @@ async def get_order_document(
     db: AsyncSession = Depends(get_db),
     _user: UserInfo = Depends(RequireOrdersListAccess),
 ):
-    if not _template_allowed(template_name):
+    resolved = _resolve_template(template_name)
+    if not _template_allowed(resolved):
         raise HTTPException(status_code=404, detail="Шаблон не найден или недоступен")
     result = await db.execute(select(Order).where(Order.id == order_id))
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Заказ не найден")
     try:
-        data = render_docx(template_name, order.form_data)
+        data = render_docx(resolved, order.form_data)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
     return Response(
