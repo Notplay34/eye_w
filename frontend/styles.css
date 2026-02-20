@@ -251,6 +251,21 @@ body {
 }
 .header__menu-wrap {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.header__user-name {
+  font-size: var(--text-body);
+  color: var(--color-text);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+.header__user-name:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
 }
 .header__menu-btn {
   width: 2.25rem;
@@ -287,6 +302,9 @@ body {
 }
 .header__dropdown[aria-hidden="true"] {
   display: none;
+}
+.header__dropdown[aria-hidden="false"] {
+  display: block;
 }
 .header__dropdown-inner a {
   display: block;
