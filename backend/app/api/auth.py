@@ -133,6 +133,7 @@ class MenuItem(BaseModel):
     href: str
     divider: Optional[bool] = None
     action: Optional[str] = None
+    group: Optional[str] = None
 
 
 class MeResponse(BaseModel):
@@ -155,7 +156,17 @@ async def me(current_user: UserInfo = Depends(RequireAnyAuth)):
         role=current_user.role,
         login=current_user.login,
         allowed_pavilions=pavilions,
-        menu_items=[MenuItem(id=m["id"], label=m["label"], href=m["href"], divider=m.get("divider"), action=m.get("action")) for m in menu],
+        menu_items=[
+            MenuItem(
+                id=m.get("id", ""),
+                label=m.get("label", ""),
+                href=m.get("href", "#"),
+                divider=m.get("divider"),
+                action=m.get("action"),
+                group=m.get("group"),
+            )
+            for m in menu
+        ],
     )
 
 

@@ -19,7 +19,7 @@
   }
   initDashboard();
 
-  /** Если /auth/me не вернул данные — строим минимум из getUser() */
+  /** Если /auth/me не вернул данные — строим меню из getUser() по роли */
   function buildMeFromUser() {
     var user = window.getUser();
     if (!user) return { name: 'Аккаунт', allowed_pavilions: [1], menu_items: [] };
@@ -27,17 +27,34 @@
     var pavilions = [1];
     if (role === 'ROLE_ADMIN' || role === 'ROLE_MANAGER') pavilions = [1, 2];
     else if (role === 'ROLE_PLATE_OPERATOR') pavilions = [2];
+    var menu_items = [];
+    if (role === 'ROLE_OPERATOR' || role === 'ROLE_MANAGER' || role === 'ROLE_ADMIN') {
+      menu_items.push({ id: 'form_p1', label: 'Оформление заказов', href: 'index.html', group: 'Павильон 1' });
+    }
+    if (role === 'ROLE_PLATE_OPERATOR' || role === 'ROLE_MANAGER' || role === 'ROLE_ADMIN') {
+      menu_items.push({ id: 'plates', label: 'Изготовление номеров', href: 'plate-operator.html', group: 'Павильон 2' });
+      menu_items.push({ id: 'plate_cash', label: 'Касса номеров', href: 'plate-cash.html', group: 'Павильон 2' });
+      menu_items.push({ id: 'warehouse', label: 'Склад заготовок', href: 'warehouse.html', group: 'Павильон 2' });
+    }
+    if (role === 'ROLE_OPERATOR' || role === 'ROLE_MANAGER' || role === 'ROLE_ADMIN') {
+      menu_items.push({ id: 'cash_p1', label: 'Касса и смены', href: 'cash-shifts.html', group: 'Касса (павильон 1)' });
+    }
+    if (role === 'ROLE_MANAGER' || role === 'ROLE_ADMIN') {
+      menu_items.push({ id: 'admin', label: 'Админка', href: 'admin.html', group: 'Управление' });
+    }
+    if (role === 'ROLE_ADMIN') {
+      menu_items.push({ id: 'users', label: 'Управление аккаунтами', href: 'users.html', group: 'Управление' });
+    }
+    menu_items.push({ id: '_div', label: '', divider: true });
+    menu_items.push({ id: 'password', label: 'Сменить пароль', href: '#', action: 'change_password' });
+    menu_items.push({ id: 'logout', label: 'Выйти', href: 'login.html', action: 'logout' });
     return {
       id: user.id,
       name: user.name || user.login || 'Аккаунт',
       role: user.role,
       login: user.login,
       allowed_pavilions: pavilions,
-      menu_items: [
-        { id: 'menu', label: 'Меню', href: 'account.html' },
-        { id: 'password', label: 'Сменить пароль', href: '#', action: 'change_password' },
-        { id: 'logout', label: 'Выйти', href: 'login.html', action: 'logout' }
-      ]
+      menu_items: menu_items
     };
   }
 
@@ -107,11 +124,20 @@
 
     var inner = document.getElementById('menuDropdownInner');
     inner.innerHTML = '';
+    var lastGroup = '';
     (me.menu_items || []).forEach(function (item) {
       if (item.divider) {
         inner.appendChild(document.createElement('hr'));
         return;
       }
+      if (item.group && item.group !== lastGroup) {
+        lastGroup = item.group;
+        var groupEl = document.createElement('div');
+        groupEl.className = 'header__dropdown-group';
+        groupEl.textContent = item.group;
+        inner.appendChild(groupEl);
+      }
+      if (!item.label && !item.href) return;
       var a = document.createElement('a');
       a.href = item.href || '#';
       a.textContent = item.label;

@@ -81,36 +81,86 @@ def can_manage_users(role: str) -> bool:
 
 def get_menu_items(role: str) -> List[dict]:
     """
-    Пункты меню для роли. Каждый пункт: id, label, href, (опционально) divider.
-    Фронт рендерит по этому списку.
+    Пункты меню для роли, сгруппированные. Каждый пункт: id, label, href, group (опционально), action, divider.
+    Видимость по правам: FORM_P1, PLATES_P2, CASH_P2, WAREHOUSE, CASH_P1, ANALYTICS, USERS.
     """
     r = _parse_role(role)
     if r is None:
         return []
 
     items = []
-    # Все роли: ссылка на полное меню (страница с боковой панелью)
-    items.append({"id": "menu", "label": "Меню", "href": "account.html"})
 
-    if r == EmployeeRole.ROLE_ADMIN:
-        items.extend([
-            {"id": "users", "label": "Управление пользователями", "href": "users.html"},
-            {"id": "settings", "label": "Настройки", "href": "admin.html"},
-            {"id": "analytics", "label": "Отчёты", "href": "admin.html#analytics"},
-            {"id": "finance", "label": "Финансы", "href": "cash-shifts.html"},
-            {"id": "audit", "label": "История изменений", "href": "admin.html"},
-            {"id": "div1", "label": "", "divider": True},
-        ])
-    elif r == EmployeeRole.ROLE_MANAGER:
-        items.extend([
-            {"id": "analytics", "label": "Отчёты", "href": "admin.html#analytics"},
-            {"id": "finance", "label": "Финансы", "href": "cash-shifts.html"},
-            {"id": "div1", "label": "", "divider": True},
-        ])
+    # Павильон 1 — только у кого есть доступ к форме
+    if can_access_resource(role, Resource.FORM_P1):
+        items.append({
+            "id": "form_p1",
+            "label": "Оформление заказов",
+            "href": "index.html",
+            "group": "Павильон 1",
+        })
 
-    # Общие для всех авторизованных
-    items.extend([
-        {"id": "password", "label": "Сменить пароль", "href": "#", "action": "change_password"},
-        {"id": "logout", "label": "Выйти", "href": "login.html", "action": "logout"},
-    ])
+    # Павильон 2 — изготовление, касса номеров, склад
+    if can_access_resource(role, Resource.PLATES_P2):
+        items.append({
+            "id": "plates",
+            "label": "Изготовление номеров",
+            "href": "plate-operator.html",
+            "group": "Павильон 2",
+        })
+    if can_access_resource(role, Resource.CASH_P2):
+        items.append({
+            "id": "plate_cash",
+            "label": "Касса номеров",
+            "href": "plate-cash.html",
+            "group": "Павильон 2",
+        })
+    if can_access_resource(role, Resource.WAREHOUSE):
+        items.append({
+            "id": "warehouse",
+            "label": "Склад заготовок",
+            "href": "warehouse.html",
+            "group": "Павильон 2",
+        })
+
+    # Касса (павильон 1)
+    if can_access_resource(role, Resource.CASH_P1):
+        items.append({
+            "id": "cash_p1",
+            "label": "Касса и смены",
+            "href": "cash-shifts.html",
+            "group": "Касса (павильон 1)",
+        })
+
+    # Управление: админка (отчёты) — менеджер и админ; аккаунты — только админ
+    if can_access_resource(role, Resource.ANALYTICS):
+        items.append({
+            "id": "admin",
+            "label": "Админка",
+            "href": "admin.html",
+            "group": "Управление",
+        })
+    if can_access_resource(role, Resource.USERS):
+        items.append({
+            "id": "users",
+            "label": "Управление аккаунтами",
+            "href": "users.html",
+            "group": "Управление",
+        })
+
+    # Разделитель перед личными пунктами
+    items.append({"id": "_div", "label": "", "divider": True})
+
+    # Сменить пароль и Выйти — все роли
+    items.append({
+        "id": "password",
+        "label": "Сменить пароль",
+        "href": "#",
+        "action": "change_password",
+    })
+    items.append({
+        "id": "logout",
+        "label": "Выйти",
+        "href": "login.html",
+        "action": "logout",
+    })
     return items
