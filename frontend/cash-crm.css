@@ -1,0 +1,375 @@
+/**
+ * Касса — CRM-стилистика 2025
+ * Фон #f6f8fa, карточки, мягкие тени, Inter, скругления 12–16px
+ */
+.cash-crm-body {
+  background: #f6f8fa;
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+.cash-crm {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ----- Header card ----- */
+.cash-crm__header-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.cash-crm__header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.cash-crm__title {
+  margin: 0 0 4px 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1d21;
+  letter-spacing: -0.02em;
+}
+
+.cash-crm__subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
+.cash-crm__header-actions {
+  flex-shrink: 0;
+}
+
+.cash-crm__btn-add {
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: none;
+  background: #0d6b5c;
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  font-family: inherit;
+}
+
+.cash-crm__btn-add:hover {
+  background: #0a5549;
+}
+
+.cash-crm__btn-add:active {
+  transform: scale(0.98);
+}
+
+/* ----- Main: table + total ----- */
+.cash-crm__main {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .cash-crm__main {
+    flex-direction: column;
+  }
+}
+
+/* ----- Table card ----- */
+.cash-crm__table-card {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border-radius: 16px;
+  padding: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.cash-crm__table-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  max-height: calc(100vh - 280px);
+}
+
+.cash-crm__table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+}
+
+.cash-crm__table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f9fafb;
+}
+
+.cash-crm__table th {
+  padding: 14px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.cash-crm__table th.cash-crm__th-num {
+  text-align: right;
+}
+
+.cash-crm__table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.cash-crm__table tbody tr:hover {
+  background: #f0f7ff;
+}
+
+.cash-crm__table tbody tr.cash-crm__row-new {
+  animation: cash-crm-fade-in 0.3s ease;
+}
+
+@keyframes cash-crm-fade-in {
+  from {
+    opacity: 0;
+    background: #e6f2f0;
+  }
+  to {
+    opacity: 1;
+    background: transparent;
+  }
+}
+
+.cash-crm__table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.cash-crm__table tbody tr:last-child td {
+  border-bottom-color: #e5e7eb;
+}
+
+.cash-crm__th-name,
+.cash-crm__td-name {
+  min-width: 140px;
+  max-width: 220px;
+}
+
+.cash-crm__th-num,
+.cash-crm__td-num {
+  width: 90px;
+  min-width: 90px;
+  text-align: right;
+}
+
+.cash-crm__th-del,
+.cash-crm__td-del {
+  width: 48px;
+  padding: 8px !important;
+  text-align: center;
+}
+
+/* ----- Inputs ----- */
+.cash-crm__input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #1a1d21;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-sizing: border-box;
+}
+
+.cash-crm__input:hover {
+  border-color: #d1d5db;
+}
+
+.cash-crm__input:focus {
+  outline: none;
+  border-color: #0d6b5c;
+  box-shadow: 0 0 0 3px rgba(13, 107, 92, 0.12);
+  background: #f9fafb;
+}
+
+.cash-crm__input--num {
+  text-align: right;
+}
+
+/* убрать стрелочки у number */
+.cash-crm__input--num::-webkit-outer-spin-button,
+.cash-crm__input--num::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cash-crm__input--num[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Итого по строке — только чтение */
+.cash-crm__row-total {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: #0d6b5c;
+  padding: 8px 10px;
+  text-align: right;
+}
+
+.cash-crm__row-total.cash-crm__row-total--negative {
+  color: #b91c1c;
+}
+
+/* ----- Delete button ----- */
+.cash-crm__btn-del {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background 0.2s ease;
+  font-size: 1.1rem;
+}
+
+.cash-crm__btn-del:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* ----- Day separator ----- */
+.cash-crm__row-day {
+  background: #f9fafb !important;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #6b7280;
+  padding: 10px 12px;
+}
+
+.cash-crm__row-day:hover {
+  background: #f9fafb !important;
+}
+
+/* ----- Placeholder / empty ----- */
+.cash-crm__row-placeholder td,
+.cash-crm__placeholder {
+  padding: 32px 24px !important;
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.875rem;
+  border: none !important;
+}
+
+.cash-crm__msg {
+  padding: 12px 20px;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.cash-crm__msg.err {
+  color: #b91c1c;
+}
+
+.cash-crm__msg.ok {
+  color: #0d6b5c;
+}
+
+/* ----- Total card (sticky) ----- */
+.cash-crm__total-card {
+  flex-shrink: 0;
+  width: 240px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+@media (min-width: 1025px) {
+  .cash-crm__total-card {
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.cash-crm__total-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.cash-crm__total-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1d21;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.cash-crm__total-value.cash-crm__total-value--negative {
+  color: #b91c1c;
+}
+
+/* ----- Responsive ----- */
+@media (max-width: 768px) {
+  .cash-crm {
+    padding: 16px;
+  }
+
+  .cash-crm__header-card {
+    padding: 20px;
+  }
+
+  .cash-crm__title {
+    font-size: 1.25rem;
+  }
+
+  .cash-crm__table-wrap {
+    max-height: none;
+  }
+
+  .cash-crm__th-num,
+  .cash-crm__td-num {
+    width: 72px;
+    min-width: 72px;
+  }
+
+  .cash-crm__total-card {
+    width: 100%;
+  }
+
+  .cash-crm__total-value {
+    font-size: 24px;
+  }
+}

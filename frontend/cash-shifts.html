@@ -7,11 +7,12 @@
   <title>Касса</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="cash-crm.css">
 </head>
-<body>
-  <div class="cash-page">
+<body class="cash-crm-body">
+  <div class="cash-crm">
     <header class="header">
       <div>
         <h1 class="header__title">Касса</h1>
@@ -30,258 +31,49 @@
       </nav>
     </header>
 
-    <div class="cash-toolbar">
-      <button type="button" class="btn btn--primary" id="btnAddRow">Добавить строку</button>
-      <span id="cashMsg" class="cash-msg"></span>
+    <div class="cash-crm__header-card">
+      <div class="cash-crm__header-text">
+        <h2 class="cash-crm__title">Касса</h2>
+        <p class="cash-crm__subtitle">ФИО, заявление, госпошлина, ДКП, страховка, номера — итого по строке пересчитывается автоматически</p>
+      </div>
+      <div class="cash-crm__header-actions">
+        <button type="button" class="cash-crm__btn-add" id="btnAddRow">Добавить строку</button>
+      </div>
     </div>
 
-    <div class="cash-table-wrap">
-      <table class="cash-table" id="cashTable">
-        <thead>
-          <tr>
-            <th class="col-name">Фамилия и инициалы</th>
-            <th class="col-num">Заявление</th>
-            <th class="col-num">Госпошлина</th>
-            <th class="col-num">ДКП</th>
-            <th class="col-num">Страховка</th>
-            <th class="col-num">Номера</th>
-            <th class="col-num">Итого</th>
-            <th class="col-del"></th>
-          </tr>
-        </thead>
-        <tbody id="cashBody">
-          <tr><td colspan="8" class="cash-msg">Загрузка…</td></tr>
-        </tbody>
-        <tfoot id="cashFoot">
-          <tr>
-            <td class="col-name">Итого в кассе</td>
-            <td class="col-num" colspan="5"></td>
-            <td class="col-num" id="cashTotalCell">0 ₽</td>
-            <td class="col-del"></td>
-          </tr>
-        </tfoot>
-      </table>
+    <div class="cash-crm__main">
+      <div class="cash-crm__table-card">
+        <div class="cash-crm__table-wrap">
+          <table class="cash-crm__table" id="cashTable">
+            <thead>
+              <tr>
+                <th class="cash-crm__th-name">ФИО</th>
+                <th class="cash-crm__th-num">Заявление</th>
+                <th class="cash-crm__th-num">Госпошлина</th>
+                <th class="cash-crm__th-num">ДКП</th>
+                <th class="cash-crm__th-num">Страховка</th>
+                <th class="cash-crm__th-num">Номера</th>
+                <th class="cash-crm__th-num">Итого</th>
+                <th class="cash-crm__th-del"></th>
+              </tr>
+            </thead>
+            <tbody id="cashBody">
+              <tr class="cash-crm__row-placeholder"><td colspan="8" class="cash-crm__placeholder">Загрузка…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p id="cashMsg" class="cash-crm__msg"></p>
+      </div>
+
+      <aside class="cash-crm__total-card">
+        <div class="cash-crm__total-label">Итого в кассе</div>
+        <div class="cash-crm__total-value" id="cashTotalCell">0 ₽</div>
+      </aside>
     </div>
+
   </div>
 
   <script src="auth.js"></script>
-  <script>
-(function () {
-  var API = window.API_BASE_URL || '';
-  var fetchApi = window.fetchWithAuth || fetch;
-  if (!window.getToken || !window.getToken()) return;
-
-  var user = window.getUser();
-  if (user) document.getElementById('userName').textContent = user.name || '';
-
-  var rows = [];
-  var saveTimer = null;
-
-  function msg(t, isErr) {
-    var el = document.getElementById('cashMsg');
-    el.textContent = t || '';
-    el.className = 'cash-msg' + (isErr ? ' err' : '');
-  }
-
-  function numVal(v) {
-    var n = parseFloat(String(v).replace(',', '.'));
-    return isNaN(n) ? 0 : n;
-  }
-
-  function patchRow(rowId, payload) {
-    return fetchApi(API + '/cash/rows/' + rowId, {
-      method: 'PATCH',
-      body: JSON.stringify(payload)
-    }).then(function (r) {
-      if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
-      return r.json();
-    });
-  }
-
-  function updateRowInList(id, data) {
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].id === id) {
-        rows[i] = data;
-        return;
-      }
-    }
-  }
-
-  function makeInput(row, key, isNum) {
-    var val = row[key];
-    var input = document.createElement('input');
-    input.type = isNum ? 'number' : 'text';
-    input.step = '0.01';
-    input.min = '0';
-    input.value = isNum ? (val != null ? Number(val) : '') : (val || '');
-    input.dataset.key = key;
-    input.dataset.rowId = String(row.id);
-    input.addEventListener('blur', function () {
-      var tr = this.closest('tr');
-      var id = parseInt(this.dataset.rowId, 10);
-      var k = this.dataset.key;
-      var v = isNum ? numVal(this.value) : this.value.trim();
-      var prev = rows.find(function (r) { return r.id === id; });
-      if (!prev) return;
-      var prevVal = prev[k];
-      if (isNum && prevVal === v && k !== 'client_name') return;
-      if (!isNum && String(prevVal || '') === String(v)) return;
-      var payload = {};
-      payload[k] = isNum ? v : v;
-      if (['application', 'state_duty', 'dkp', 'insurance', 'plates'].indexOf(k) >= 0 && tr) {
-        var sum = 0;
-        ['application', 'state_duty', 'dkp', 'insurance', 'plates'].forEach(function (key) {
-          var inp = tr.querySelector('input[data-key="' + key + '"]');
-          if (inp) sum += numVal(inp.value);
-        });
-        payload.total = sum;
-      }
-      patchRow(id, payload).then(function (updated) {
-        updateRowInList(id, updated);
-        var totalInp = tr && tr.querySelector('input[data-key="total"]');
-        if (totalInp && payload.total !== undefined) totalInp.value = payload.total;
-        renderTotal();
-        msg('Сохранено');
-        setTimeout(function () { msg(''); }, 2000);
-      }).catch(function (e) {
-        msg('Ошибка: ' + (e.message || 'не удалось сохранить'), true);
-      });
-    });
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') this.blur();
-    });
-    return input;
-  }
-
-  function recalcTotal(row) {
-    var a = numVal(row.application);
-    var s = numVal(row.state_duty);
-    var d = numVal(row.dkp);
-    var i = numVal(row.insurance);
-    var p = numVal(row.plates);
-    return a + s + d + i + p;
-  }
-
-  function renderRow(row) {
-    var tr = document.createElement('tr');
-    tr.dataset.rowId = String(row.id);
-    var tdName = document.createElement('td');
-    tdName.className = 'col-name';
-    tdName.appendChild(makeInput(row, 'client_name', false));
-    tr.appendChild(tdName);
-    ['application', 'state_duty', 'dkp', 'insurance', 'plates', 'total'].forEach(function (key) {
-      var td = document.createElement('td');
-      td.className = 'col-num';
-      td.appendChild(makeInput(row, key, true));
-      tr.appendChild(td);
-    });
-    var tdDel = document.createElement('td');
-    tdDel.className = 'col-del';
-    var btnDel = document.createElement('button');
-    btnDel.textContent = '×';
-    btnDel.title = 'Удалить строку';
-    btnDel.onclick = function () {
-      if (!confirm('Удалить строку?')) return;
-      fetchApi(API + '/cash/rows/' + row.id, { method: 'DELETE' }).then(function (r) {
-        if (r.status === 204 || r.ok) {
-          rows = rows.filter(function (r) { return r.id !== row.id; });
-          render();
-        } else return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
-      }).catch(function (e) {
-        msg('Ошибка: ' + (e.message || 'не удалось удалить'), true);
-      });
-    };
-    tdDel.appendChild(btnDel);
-    tr.appendChild(tdDel);
-    return tr;
-  }
-
-  function dayKey(row) {
-    var s = row.created_at;
-    if (!s) return '';
-    var d = new Date(s);
-    if (isNaN(d.getTime())) return '';
-    var y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
-    return y + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
-  }
-
-  function dayLabel(key) {
-    if (!key) return '';
-    var parts = key.split('-');
-    if (parts.length !== 3) return key;
-    return parts[2] + '.' + parts[1] + '.' + parts[0];
-  }
-
-  function renderTotal() {
-    var total = rows.reduce(function (sum, r) { return sum + numVal(r.total); }, 0);
-    var el = document.getElementById('cashTotalCell');
-    if (el) el.textContent = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(total) + ' ₽';
-  }
-
-  function render() {
-    var tbody = document.getElementById('cashBody');
-    tbody.innerHTML = '';
-    if (rows.length === 0) {
-      var tr = document.createElement('tr');
-      tr.innerHTML = '<td colspan="8" class="cash-msg">Нет строк. Нажмите «Добавить строку».</td>';
-      tbody.appendChild(tr);
-      renderTotal();
-      return;
-    }
-    var lastDay = null;
-    rows.forEach(function (row) {
-      var d = dayKey(row);
-      if (d && d !== lastDay) {
-        lastDay = d;
-        var sep = document.createElement('tr');
-        sep.className = 'day-sep';
-        sep.innerHTML = '<td colspan="8">' + dayLabel(d) + '</td>';
-        tbody.appendChild(sep);
-      }
-      tbody.appendChild(renderRow(row));
-    });
-    renderTotal();
-  }
-
-  function load() {
-    fetchApi(API + '/cash/rows').then(function (r) {
-      if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
-      return r.json();
-    }).then(function (data) {
-      rows = data || [];
-      render();
-    }).catch(function (e) {
-      document.getElementById('cashBody').innerHTML = '<tr><td colspan="8" class="cash-msg err">Ошибка загрузки: ' + (e.message || '') + '</td></tr>';
-    });
-  }
-
-  document.getElementById('btnAddRow').onclick = function () {
-    fetchApi(API + '/cash/rows', {
-      method: 'POST',
-      body: JSON.stringify({
-        client_name: '',
-        application: 0,
-        state_duty: 0,
-        dkp: 0,
-        insurance: 0,
-        plates: 0,
-        total: 0
-      })
-    }).then(function (r) {
-      if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
-      return r.json();
-    }).then(function (newRow) {
-      rows.unshift(newRow);
-      render();
-      msg('Строка добавлена');
-      setTimeout(function () { msg(''); }, 2000);
-    }).catch(function (e) {
-      msg('Ошибка: ' + (e.message || 'не удалось добавить'), true);
-    });
-  };
-
-  load();
-})();
-  </script>
+  <script src="cash-crm.js"></script>
 </body>
 </html>
