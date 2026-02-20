@@ -22,8 +22,17 @@
   }
 
   function numVal(v) {
+    if (v === null || v === undefined || v === '') return 0;
     var s = String(v).replace(/\s/g, '').replace(',', '.');
     var n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+
+  /** Число для итога по строке (учитывает минус) */
+  function rowTotalNum(r) {
+    var t = r.total;
+    if (t === null || t === undefined) return 0;
+    var n = Number(t);
     return isNaN(n) ? 0 : n;
   }
 
@@ -90,6 +99,13 @@
     input.dataset.rowId = String(row.id);
     if (isNum) input.setAttribute('inputmode', 'decimal');
 
+    if (isNum && ['application', 'state_duty', 'dkp', 'insurance', 'plates'].indexOf(key) >= 0) {
+      input.addEventListener('input', function () {
+        var rowEl = this.closest('.cash-crm__grid-row');
+        refreshRowTotalFromInputs(rowEl);
+      });
+    }
+
     input.addEventListener('blur', function () {
       var rowEl = this.closest('.cash-crm__grid-row');
       var id = parseInt(this.dataset.rowId, 10);
@@ -104,22 +120,20 @@
       var prevVal = prev[k];
       if (isNum && prevVal === v && k !== 'client_name') return;
       if (!isNum && String(prevVal || '') === String(v)) return;
+      refreshRowTotalFromInputs(rowEl);
+
       var payload = {};
       payload[k] = isNum ? v : v;
       if (['application', 'state_duty', 'dkp', 'insurance', 'plates'].indexOf(k) >= 0 && rowEl) {
-        var sum = 0;
-        ['application', 'state_duty', 'dkp', 'insurance', 'plates'].forEach(function (key) {
-          var inp = rowEl.querySelector('input[data-key="' + key + '"]');
-          if (inp) sum += numVal(inp.value);
-        });
-        payload.total = sum;
+        var row = rows.find(function (r) { return r.id === id; });
+        payload.total = row ? row.total : 0;
       }
       patchRow(id, payload)
         .then(function (updated) {
           updateRowInList(id, updated);
           var totalWrap = rowEl && rowEl.querySelector('.cash-crm__row-total');
           if (totalWrap) {
-            var total = numVal(updated.total);
+            var total = rowTotalNum(updated);
             var numSpan = totalWrap.querySelector('.cash-crm__amount-num');
             if (numSpan) numSpan.textContent = formatNumOnly(total);
             totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
@@ -209,13 +223,34 @@
   }
 
   function renderTotal() {
-    var total = rows.reduce(function (sum, r) { return sum + numVal(r.total); }, 0);
+    var total = rows.reduce(function (sum, r) { return sum + rowTotalNum(r); }, 0);
     if (!totalEl) return;
     var numSpan = totalEl.querySelector('.cash-crm__amount-num');
     if (numSpan) numSpan.textContent = formatNumOnly(total);
     totalEl.classList.remove('cash-crm__total-value--negative', 'cash-crm__total-value--positive');
     if (total < 0) totalEl.classList.add('cash-crm__total-value--negative');
     else if (total > 0) totalEl.classList.add('cash-crm__total-value--positive');
+  }
+
+  /** Обновить итог по строке и «Итого в кассе» сразу по текущим значениям инпутов (без ожидания сервера) */
+  function refreshRowTotalFromInputs(rowEl) {
+    if (!rowEl) return;
+    var id = parseInt(rowEl.dataset.rowId, 10);
+    if (isNaN(id)) return;
+    var sum = 0;
+    ['application', 'state_duty', 'dkp', 'insurance', 'plates'].forEach(function (key) {
+      var inp = rowEl.querySelector('input[data-key="' + key + '"]');
+      if (inp) sum += numVal(inp.value);
+    });
+    var row = rows.find(function (r) { return r.id === id; });
+    if (row) row.total = sum;
+    var totalWrap = rowEl.querySelector('.cash-crm__row-total');
+    if (totalWrap) {
+      var numSpan = totalWrap.querySelector('.cash-crm__amount-num');
+      if (numSpan) numSpan.textContent = formatNumOnly(sum);
+      totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(sum);
+    }
+    renderTotal();
   }
 
   function render() {
