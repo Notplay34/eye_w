@@ -64,6 +64,7 @@ class OrderResponse(BaseModel):
     need_plate: bool
     service_type: Optional[str] = None
     created_at: str
+    client: Optional[str] = None  # для списка: из form_data
 
     class Config:
         from_attributes = True

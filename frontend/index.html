@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script>if(!localStorage.getItem('eye_w_token'))window.location.replace('login.html');</script>
-  <title>Павильон 1 — Оформление заказов</title>
+  <title>Главная — Павильоны МРЭО</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
@@ -12,22 +12,30 @@
 </head>
 <body>
   <div class="app">
-    <header class="header">
-      <h1 class="header__title">Оформление документов</h1>
-      <p class="header__subtitle">Павильон 1 — форма заказа и приём оплаты</p>
-      <nav class="nav-bar" id="headerNav">
-        <span class="nav-group"><a href="account.html">Меню</a></span>
-        <span class="nav-group"><a href="index.html">Павильон 1</a></span>
-        <span class="nav-group"><a href="plate-operator.html">Павильон 2</a></span>
-        <span class="nav-group"><a href="plate-cash.html">Касса номеров</a></span>
-        <span class="nav-group"><a href="cash-shifts.html">Касса</a></span>
-        <span class="nav-group"><a href="admin.html">Админка</a><a href="users.html">Аккаунты</a></span>
-        <span class="nav-user" id="currentUserName"></span>
-        <a href="login.html" id="btnLogout" class="nav-logout">Выйти</a>
-      </nav>
+    <header class="header header--dashboard">
+      <div class="header__row">
+        <div class="header__brand">
+          <h1 class="header__title">Павильоны МРЭО</h1>
+          <div class="header__pavilion-wrap" id="pavilionWrap">
+            <span class="header__pavilion-label" id="pavilionLabel">Павильон 1</span>
+            <select class="header__pavilion-select" id="pavilionSelect" style="display:none;" aria-label="Выбор павильона"></select>
+          </div>
+        </div>
+        <div class="header__actions">
+          <button type="button" class="btn btn--primary header__quick-create" id="btnQuickCreate" style="display:none;">Создать заявку</button>
+          <div class="header__menu-wrap">
+            <button type="button" class="header__menu-btn" id="btnMenu" aria-label="Меню" title="Меню">⋮</button>
+            <div class="header__dropdown" id="menuDropdown" aria-hidden="true">
+              <div class="header__dropdown-inner" id="menuDropdownInner"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </header>
 
     <main class="main">
+      <!-- Контент павильона 1: форма + последние заявки -->
+      <div class="main-content main-content--p1" id="contentP1">
       <!-- Основная форма: один блок ввода — остальное подставляется -->
       <section class="card card--primary" id="mainForm">
         <h2 class="card__title">Данные заказа</h2>
@@ -295,6 +303,21 @@
         </ul>
       </section>
 
+      <!-- Последние 10 заявок павильона 1 -->
+      <section class="card card--last-orders" id="lastOrdersCard">
+        <h2 class="card__title">Последние 10 заявок</h2>
+        <div id="lastOrdersContainer">
+          <p class="text-caption" id="lastOrdersLoading">Загрузка…</p>
+          <table class="orders-table" id="lastOrdersTable" style="display:none;">
+            <thead>
+              <tr><th>№</th><th>Клиент</th><th>Сумма</th><th>Статус</th><th>Дата</th></tr>
+            </thead>
+            <tbody id="lastOrdersBody"></tbody>
+          </table>
+          <p class="text-caption" id="lastOrdersEmpty" style="display:none;">Нет заявок</p>
+        </div>
+      </section>
+
       <!-- История заполнения: клик — подставить данные в форму -->
       <section class="card card--history" id="historyCard">
         <h2 class="card__title">История заполнения</h2>
@@ -303,6 +326,36 @@
           <li class="form-history-list__loading" id="formHistoryLoading">Загрузка…</li>
         </ul>
       </section>
+      </div>
+
+      <!-- Контент павильона 2: заказы с номерами -->
+      <div class="main-content main-content--p2" id="contentP2" style="display:none;">
+        <section class="card">
+          <h2 class="card__title">Изготовление номеров — последние заказы</h2>
+          <div id="plateListContainer">
+            <p class="text-caption" id="plateListLoading">Загрузка…</p>
+            <table class="plate-table" id="plateOrderTable" style="display:none;">
+              <thead>
+                <tr><th>ID</th><th>Клиент</th><th>Сумма</th><th>Заявл.</th><th>Статус</th><th>Действия</th></tr>
+              </thead>
+              <tbody id="plateOrderBody"></tbody>
+            </table>
+            <p class="text-caption" id="plateListEmpty" style="display:none;">Нет заказов с номерами</p>
+          </div>
+        </section>
+        <div id="modalPay" class="modal" aria-hidden="true">
+          <div class="modal__box">
+            <h3>Доплата за номера</h3>
+            <p class="text-caption" style="margin:0 0 0.5rem;">Заказ <strong id="modalOrderIdP2"></strong></p>
+            <label for="modalAmountP2">Сумма, ₽</label>
+            <input type="number" id="modalAmountP2" min="1" step="1" value="0">
+            <div class="row-actions">
+              <button type="button" class="btn btn--primary" id="modalSubmitP2">Принять</button>
+              <button type="button" class="btn btn--secondary" id="modalCancelP2">Отмена</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
 
     <footer class="footer">
@@ -312,32 +365,7 @@
   </div>
 
   <script src="auth.js"></script>
-  <script>
-    (function(){
-      if (!window.requireAuth()) return;
-      var user = window.getUser();
-      if (user) {
-        var el = document.getElementById('currentUserName');
-        if (el) {
-          if (user.role === 'ROLE_ADMIN') {
-            var a = document.createElement('a');
-            a.href = 'account.html';
-            a.textContent = user.name;
-            a.style.color = 'inherit';
-            a.style.textDecoration = 'none';
-            el.appendChild(a);
-          } else {
-            el.textContent = user.name;
-          }
-        }
-      }
-      document.getElementById('btnLogout').addEventListener('click', function (e) {
-        e.preventDefault();
-        window.clearAuth();
-        window.location.href = 'login.html';
-      });
-    })();
-  </script>
+  <script src="dashboard.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

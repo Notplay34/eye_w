@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.logging_config import get_logger
+from app.core.permissions import allowed_pavilions, get_menu_items
 from app.models import Employee
 from app.models.employee import EmployeeRole
 from app.services.auth_service import (
@@ -75,6 +76,12 @@ def require_roles(allowed_roles: List[EmployeeRole]):
     return _check
 
 
+RequireAnyAuth = require_roles([
+    EmployeeRole.ROLE_OPERATOR,
+    EmployeeRole.ROLE_MANAGER,
+    EmployeeRole.ROLE_ADMIN,
+    EmployeeRole.ROLE_PLATE_OPERATOR,
+])
 RequireFormAccess = require_roles([EmployeeRole.ROLE_OPERATOR, EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN])
 RequireOrdersListAccess = require_roles([EmployeeRole.ROLE_OPERATOR, EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN, EmployeeRole.ROLE_PLATE_OPERATOR])
 RequireAnalyticsAccess = require_roles([EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN])
@@ -120,9 +127,36 @@ async def login(
     )
 
 
-@router.get("/me", response_model=UserInfo)
-async def me(current_user: UserInfo = Depends(RequireFormAccess)):
-    return current_user
+class MenuItem(BaseModel):
+    id: str
+    label: str
+    href: str
+    divider: Optional[bool] = None
+    action: Optional[str] = None
+
+
+class MeResponse(BaseModel):
+    id: int
+    name: str
+    role: str
+    login: str
+    allowed_pavilions: List[int]
+    menu_items: List[MenuItem]
+
+
+@router.get("/me", response_model=MeResponse)
+async def me(current_user: UserInfo = Depends(RequireAnyAuth)):
+    """Текущий пользователь, разрешённые павильоны и пункты меню по роли."""
+    pavilions = allowed_pavilions(current_user.role)
+    menu = get_menu_items(current_user.role)
+    return MeResponse(
+        id=current_user.id,
+        name=current_user.name,
+        role=current_user.role,
+        login=current_user.login,
+        allowed_pavilions=pavilions,
+        menu_items=[MenuItem(id=m["id"], label=m["label"], href=m["href"], divider=m.get("divider"), action=m.get("action")) for m in menu],
+    )
 
 
 class ChangePasswordBody(BaseModel):
@@ -133,7 +167,7 @@ class ChangePasswordBody(BaseModel):
 @router.post("/change-password")
 async def change_password(
     body: ChangePasswordBody,
-    current_user: UserInfo = Depends(RequireFormAccess),
+    current_user: UserInfo = Depends(RequireAnyAuth),
     db: AsyncSession = Depends(get_db),
 ):
     """Смена пароля текущего пользователя (требуется старый пароль)."""

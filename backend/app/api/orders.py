@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.logging_config import get_logger
+from app.core.permissions import can_access_pavilion
 from app.api.auth import RequireFormAccess, RequireAnalyticsAccess, RequireOrdersListAccess, RequirePlateAccess, UserInfo
 
 logger = get_logger(__name__)
@@ -240,10 +241,19 @@ async def list_orders_for_plate(
 async def list_orders(
     status: Optional[OrderStatus] = None,
     need_plate: Optional[bool] = None,
+    pavilion: Optional[int] = None,
     limit: int = 100,
     db: AsyncSession = Depends(get_db),
-    _user: UserInfo = Depends(RequireOrdersListAccess),
+    user: UserInfo = Depends(RequireOrdersListAccess),
 ):
+    """Список заказов. pavilion=1 — заявки павильона 1 (форма), pavilion=2 — только с номерами (need_plate)."""
+    if pavilion is not None:
+        if pavilion not in (1, 2):
+            raise HTTPException(status_code=400, detail="Павильон должен быть 1 или 2")
+        if not can_access_pavilion(user.role, pavilion):
+            raise HTTPException(status_code=403, detail="Нет доступа к этому павильону")
+        if pavilion == 2:
+            need_plate = True
     q = select(Order).order_by(Order.created_at.desc()).limit(limit)
     if status is not None:
         q = q.where(Order.status == status)
@@ -251,8 +261,12 @@ async def list_orders(
         q = q.where(Order.need_plate == need_plate)
     result = await db.execute(q)
     orders = result.scalars().all()
-    return [
-        OrderResponse(
+    out = []
+    for o in orders:
+        client = None
+        if o.form_data:
+            client = (o.form_data.get("client_fio") or o.form_data.get("client_legal_name") or "").strip() or None
+        out.append(OrderResponse(
             id=o.id,
             public_id=o.public_id,
             status=o.status.value,
@@ -263,9 +277,9 @@ async def list_orders(
             need_plate=o.need_plate,
             service_type=o.service_type,
             created_at=o.created_at.isoformat() if o.created_at else "",
-        )
-        for o in orders
-    ]
+            client=client,
+        ))
+    return out
 
 
 @router.get("/{order_id}", response_model=OrderResponse)

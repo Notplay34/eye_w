@@ -28,7 +28,7 @@
   <script>
     (function () {
       if (window.getToken && window.getToken()) {
-        window.location.href = 'account.html';
+        window.location.href = 'index.html';
         return;
       }
       var form = document.getElementById('loginForm');
@@ -59,11 +59,17 @@
             var token = data.access_token;
             return fetch(base + '/auth/me', { headers: { 'Authorization': 'Bearer ' + token } }).then(function (r) {
               if (!r.ok) throw new Error('token_rejected');
-              return data;
+              return r.json();
             });
           })
-          .then(function () {
-            window.location.href = 'account.html';
+          .then(function (me) {
+            if (me) {
+              window.setMe(me);
+              var allowed = me.allowed_pavilions || [1];
+              var saved = localStorage.getItem('eye_w_pavilion');
+              if (saved !== '1' && saved !== '2' && allowed.length) localStorage.setItem('eye_w_pavilion', String(allowed[0]));
+            }
+            window.location.href = 'index.html';
           })
           .catch(function (err) {
             var msg = err.message || 'Неверный логин или пароль';
