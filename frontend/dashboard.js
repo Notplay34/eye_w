@@ -9,14 +9,40 @@
   var me = window.getMe();
   if (!me || !me.menu_items) {
     window.loadMe().then(function (m) {
-      me = m;
-      if (me) initDashboard();
+      me = m || buildMeFromUser();
+      initDashboard();
+    }).catch(function () {
+      me = buildMeFromUser();
+      initDashboard();
     });
     return;
   }
   initDashboard();
 
+  /** Если /auth/me не вернул данные — строим минимум из getUser() */
+  function buildMeFromUser() {
+    var user = window.getUser();
+    if (!user) return { name: 'Аккаунт', allowed_pavilions: [1], menu_items: [] };
+    var role = (user.role || '').toUpperCase();
+    var pavilions = [1];
+    if (role === 'ROLE_ADMIN' || role === 'ROLE_MANAGER') pavilions = [1, 2];
+    else if (role === 'ROLE_PLATE_OPERATOR') pavilions = [2];
+    return {
+      id: user.id,
+      name: user.name || user.login || 'Аккаунт',
+      role: user.role,
+      login: user.login,
+      allowed_pavilions: pavilions,
+      menu_items: [
+        { id: 'menu', label: 'Меню', href: 'account.html' },
+        { id: 'password', label: 'Сменить пароль', href: '#', action: 'change_password' },
+        { id: 'logout', label: 'Выйти', href: 'login.html', action: 'logout' }
+      ]
+    };
+  }
+
   function initDashboard() {
+    if (!me) me = buildMeFromUser();
     renderHeader();
     setPavilionVisibility();
     switchContent(window.getCurrentPavilion());
@@ -28,11 +54,20 @@
     if (userNameEl) {
       userNameEl.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(); });
     }
-    document.getElementById('pavilionSelect').addEventListener('change', onPavilionChange);
+    var logoutLink = document.getElementById('headerLogoutLink');
+    if (logoutLink) {
+      logoutLink.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.clearAuth();
+        window.location.href = 'login.html';
+      });
+    }
+    var pavSelect = document.getElementById('pavilionSelect');
+    if (pavSelect) pavSelect.addEventListener('change', onPavilionChange);
     document.addEventListener('click', function (e) {
       if (!e.target.closest('.header__menu-wrap')) {
         var dd = document.getElementById('menuDropdown');
-        if (dd) dd.setAttribute('aria-hidden', 'true');
+        if (dd) { dd.classList.remove('header__dropdown--open'); dd.setAttribute('aria-hidden', 'true'); }
       }
     });
     loadLast10Orders();
@@ -94,7 +129,8 @@
           window.location.href = 'account.html';
           return;
         }
-        document.getElementById('menuDropdown').setAttribute('aria-hidden', 'true');
+        var d = document.getElementById('menuDropdown');
+        if (d) { d.classList.remove('header__dropdown--open'); d.setAttribute('aria-hidden', 'true'); }
       });
       inner.appendChild(a);
     });
@@ -108,7 +144,8 @@
   function toggleMenu() {
     var dd = document.getElementById('menuDropdown');
     if (!dd) return;
-    var isOpen = dd.getAttribute('aria-hidden') !== 'true';
+    var isOpen = dd.classList.contains('header__dropdown--open');
+    dd.classList.toggle('header__dropdown--open', !isOpen);
     dd.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
   }
 

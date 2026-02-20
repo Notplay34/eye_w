@@ -267,6 +267,18 @@ body {
   color: var(--color-primary);
   background: var(--color-primary-soft);
 }
+.header__logout-link {
+  font-size: var(--text-caption);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+.header__logout-link:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
 .header__menu-btn {
   width: 2.25rem;
   height: 2.25rem;
@@ -300,10 +312,10 @@ body {
   z-index: 100;
   padding: var(--space-2);
 }
-.header__dropdown[aria-hidden="true"] {
+.header__dropdown {
   display: none;
 }
-.header__dropdown[aria-hidden="false"] {
+.header__dropdown.header__dropdown--open {
   display: block;
 }
 .header__dropdown-inner a {
