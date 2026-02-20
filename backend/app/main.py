@@ -20,13 +20,10 @@ from app.api.price_list import router as price_list_router
 from app.api.warehouse import router as warehouse_router
 from app.api.form_history import router as form_history_router
 from app.services.auth_service import hash_password
+from app.config import settings
 
 setup_logging()
 logger = get_logger(__name__)
-
-SUPERUSER_LOGIN = "sergey151"
-SUPERUSER_PASSWORD = "1wq21wq2"
-SUPERUSER_NAME = "Сергей"
 
 
 async def ensure_columns_and_enum():
@@ -160,21 +157,26 @@ async def ensure_columns_and_enum():
 
 
 async def ensure_superuser():
-    """Создать суперпользователя sergey151, если такого логина ещё нет."""
+    """Создать суперпользователя при первом запуске, если такого логина ещё нет. Логин/пароль/имя из .env (SUPERUSER_LOGIN, SUPERUSER_PASSWORD, SUPERUSER_NAME)."""
+    login = (settings.superuser_login or "").strip()
+    if not login:
+        return
     async with async_session_maker() as session:
-        r = await session.execute(select(Employee).where(Employee.login == SUPERUSER_LOGIN))
+        r = await session.execute(select(Employee).where(Employee.login == login))
         if r.scalar_one_or_none() is not None:
             return
+        password = settings.superuser_password or ""
+        name = (settings.superuser_name or login).strip()
         emp = Employee(
-            name=SUPERUSER_NAME,
+            name=name,
             role=EmployeeRole.ROLE_ADMIN,
-            login=SUPERUSER_LOGIN,
-            password_hash=hash_password(SUPERUSER_PASSWORD),
+            login=login,
+            password_hash=hash_password(password),
             is_active=True,
         )
         session.add(emp)
         await session.commit()
-        logger.info("Создан суперпользователь: %s", SUPERUSER_LOGIN)
+        logger.info("Создан суперпользователь: %s", login)
 
 
 async def seed_document_prices():
@@ -235,9 +237,12 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
         content={"detail": detail},
     )
 
+_cors_origins = [o.strip() for o in (settings.cors_origins or "").split(",") if o.strip()]
+if not _cors_origins:
+    _cors_origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
