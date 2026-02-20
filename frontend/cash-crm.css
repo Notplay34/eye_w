@@ -249,6 +249,30 @@
   color: #065f46;
 }
 
+/* Редактируемое поле Итого по строке (в т.ч. минус) */
+.cash-crm__input--total {
+  width: 6em;
+  min-width: 4em;
+  text-align: right;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  padding: 0 2px 0 0;
+}
+.cash-crm__input--total:focus {
+  outline: none;
+}
+.cash-crm__input--total::-webkit-outer-spin-button,
+.cash-crm__input--total::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.cash-crm__input--total[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* ----- Delete button ----- */
 .cash-crm__btn-del {
   width: 36px;

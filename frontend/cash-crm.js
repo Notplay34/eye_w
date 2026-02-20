@@ -87,6 +87,61 @@
     return 'cash-crm__row-total--positive';
   }
 
+  /** Редактируемое поле «Итого» по строке — можно сразу ввести минус */
+  function makeTotalInput(row, initialTotal, rowEl) {
+    var id = row.id;
+    var wrap = document.createElement('span');
+    wrap.className = 'cash-crm__row-total ' + rowTotalClass(initialTotal);
+
+    var inp = document.createElement('input');
+    inp.type = 'number';
+    inp.step = '0.01';
+    inp.className = 'cash-crm__input cash-crm__input--num cash-crm__input--total';
+    inp.value = initialTotal === 0 ? '' : initialTotal;
+    inp.dataset.rowId = String(id);
+    inp.setAttribute('inputmode', 'decimal');
+
+    inp.addEventListener('input', function () {
+      var v = numVal(this.value);
+      var r = rows.find(function (x) { return x.id === id; });
+      if (r) r.total = v;
+      wrap.className = 'cash-crm__row-total ' + rowTotalClass(v);
+      renderTotal();
+    });
+
+    inp.addEventListener('blur', function () {
+      var v = numVal(this.value);
+      this.value = v === 0 && this.value.trim() !== '' ? '0' : (v === 0 ? '' : formatNum(v));
+      var r = rows.find(function (x) { return x.id === id; });
+      if (!r) return;
+      if (r.total === v && !this.dataset.dirty) return;
+      this.dataset.dirty = '';
+      patchRow(id, { total: v })
+        .then(function (updated) {
+          updateRowInList(id, updated);
+          var t = rowTotalNum(updated);
+          inp.value = t === 0 ? '' : formatNum(t);
+          wrap.className = 'cash-crm__row-total ' + rowTotalClass(t);
+          renderTotal();
+          msg('Сохранено', 'ok');
+        })
+        .catch(function (e) {
+          msg('Ошибка: ' + (e.message || ''), 'err');
+          if (r) r.total = rowTotalNum(r);
+          renderTotal();
+        });
+    });
+    inp.addEventListener('focus', function () { this.dataset.dirty = '1'; });
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') this.blur(); });
+
+    wrap.appendChild(inp);
+    var currency = document.createElement('span');
+    currency.className = 'cash-crm__amount-currency';
+    currency.textContent = ' \u20BD';
+    wrap.appendChild(currency);
+    return wrap;
+  }
+
   function makeInput(row, key, isNum) {
     var val = row[key];
     var input = document.createElement('input');
@@ -132,12 +187,10 @@
         .then(function (updated) {
           updateRowInList(id, updated);
           var totalWrap = rowEl && rowEl.querySelector('.cash-crm__row-total');
-          if (totalWrap) {
-            var total = rowTotalNum(updated);
-            var numSpan = totalWrap.querySelector('.cash-crm__amount-num');
-            if (numSpan) numSpan.textContent = formatNumOnly(total);
-            totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
-          }
+          var totalInp = totalWrap && totalWrap.querySelector('input.cash-crm__input--total');
+          var total = rowTotalNum(updated);
+          if (totalWrap) totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
+          if (totalInp) totalInp.value = total === 0 ? '' : formatNum(total);
           renderTotal();
           msg('Сохранено', 'ok');
         })
@@ -189,10 +242,7 @@
 
     var cellTotal = document.createElement('div');
     cellTotal.className = 'cash-crm__grid-cell cash-crm__grid-cell--num';
-    var totalWrap = document.createElement('span');
-    totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
-    totalWrap.innerHTML = '<span class="cash-crm__amount-num">' + formatNumOnly(total) + '</span><span class="cash-crm__amount-currency"> ₽</span>';
-    cellTotal.appendChild(totalWrap);
+    cellTotal.appendChild(makeTotalInput(row, total, rowEl));
     rowEl.appendChild(cellTotal);
 
     var cellDel = document.createElement('div');
@@ -232,7 +282,7 @@
     else if (total > 0) totalEl.classList.add('cash-crm__total-value--positive');
   }
 
-  /** Обновить итог по строке и «Итого в кассе» сразу по текущим значениям инпутов (без ожидания сервера) */
+  /** Обновить итог по строке и «Итого в кассе» сразу по текущим значениям пяти полей */
   function refreshRowTotalFromInputs(rowEl) {
     if (!rowEl) return;
     var id = parseInt(rowEl.dataset.rowId, 10);
@@ -245,11 +295,9 @@
     var row = rows.find(function (r) { return r.id === id; });
     if (row) row.total = sum;
     var totalWrap = rowEl.querySelector('.cash-crm__row-total');
-    if (totalWrap) {
-      var numSpan = totalWrap.querySelector('.cash-crm__amount-num');
-      if (numSpan) numSpan.textContent = formatNumOnly(sum);
-      totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(sum);
-    }
+    var totalInp = totalWrap && totalWrap.querySelector('input.cash-crm__input--total');
+    if (totalWrap) totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(sum);
+    if (totalInp) totalInp.value = sum === 0 ? '' : sum;
     renderTotal();
   }
 
