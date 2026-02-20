@@ -44,33 +44,34 @@
     <div class="cash-crm__main">
       <div class="cash-crm__table-card">
         <div class="cash-crm__table-wrap">
-          <table class="cash-crm__table" id="cashTable">
-            <thead>
-              <tr>
-                <th class="cash-crm__th-name">ФИО</th>
-                <th class="cash-crm__th-num">Заявление</th>
-                <th class="cash-crm__th-num">Госпошлина</th>
-                <th class="cash-crm__th-num">ДКП</th>
-                <th class="cash-crm__th-num">Страховка</th>
-                <th class="cash-crm__th-num">Номера</th>
-                <th class="cash-crm__th-num">Итого</th>
-                <th class="cash-crm__th-del"></th>
-              </tr>
-            </thead>
-            <tbody id="cashBody">
-              <tr class="cash-crm__row-placeholder"><td colspan="8" class="cash-crm__placeholder">Загрузка…</td></tr>
-            </tbody>
-          </table>
+          <div class="cash-crm__grid">
+            <div class="cash-crm__grid-header">
+              <div class="cash-crm__grid-cell cash-crm__grid-cell--name">ФИО</div>
+              <div class="cash-crm__grid-cell cash-crm__grid-cell--num">Заявление</div>
+              <div class="cash-crm__grid-cell cash-crm__grid-cell--num">Госпошлина</div>
+              <div class="cash-crm__grid-cell cash-crm__grid-cell--num">ДКП</div>
+              <div class="cash-crm__grid-cell cash-crm__grid-cell--num">Страховка</div>
+              <div class="cash-crm__grid-cell cash-crm__grid-cell--num">Номера</div>
+              <div class="cash-crm__grid-cell cash-crm__grid-cell--num">Итого</div>
+              <div class="cash-crm__grid-cell cash-crm__grid-cell--del"></div>
+            </div>
+            <div class="cash-crm__grid-body" id="cashBody">
+              <div class="cash-crm__grid-row cash-crm__grid-row--placeholder">
+                <div class="cash-crm__grid-cell cash-crm__placeholder" style="grid-column: 1 / -1;">Загрузка…</div>
+              </div>
+            </div>
+          </div>
         </div>
         <p id="cashMsg" class="cash-crm__msg"></p>
       </div>
 
       <aside class="cash-crm__total-card">
         <div class="cash-crm__total-label">Итого в кассе</div>
-        <div class="cash-crm__total-value" id="cashTotalCell">0 ₽</div>
+        <div class="cash-crm__total-value" id="cashTotalCell">
+          <span class="cash-crm__amount-num">0</span><span class="cash-crm__amount-currency"> ₽</span>
+        </div>
       </aside>
     </div>
-
   </div>
 
   <script src="auth.js"></script>

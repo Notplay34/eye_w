@@ -1,5 +1,5 @@
 /**
- * Касса (павильон 1) — логика таблицы, сохранение, итоги. CRM-стиль.
+ * Касса — премиальный финтех UI. Grid-верстка, табличные цифры, без переносов.
  */
 (function () {
   var API = window.API_BASE_URL || '';
@@ -12,6 +12,7 @@
   var rows = [];
   var msgEl = document.getElementById('cashMsg');
   var totalEl = document.getElementById('cashTotalCell');
+  var bodyEl = document.getElementById('cashBody');
 
   function msg(t, type) {
     if (!msgEl) return;
@@ -33,9 +34,12 @@
     }).format(n);
   }
 
-  function formatNumSpaces(n) {
-    var s = formatNum(n);
-    return s.replace(/\u00a0/g, ' ') + ' ₽';
+  /** Только число с пробелами, без " ₽" — для вставки в разметку */
+  function formatNumOnly(n) {
+    return new Intl.NumberFormat('ru-RU', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n).replace(/\u00a0/g, ' ');
   }
 
   function patchRow(rowId, payload) {
@@ -68,20 +72,26 @@
     );
   }
 
+  function rowTotalClass(total) {
+    if (total === 0) return 'cash-crm__row-total--zero';
+    if (total < 0) return 'cash-crm__row-total--negative';
+    return 'cash-crm__row-total--positive';
+  }
+
   function makeInput(row, key, isNum) {
     var val = row[key];
     var input = document.createElement('input');
     input.type = isNum ? 'number' : 'text';
     input.className = 'cash-crm__input' + (isNum ? ' cash-crm__input--num' : '');
     input.step = '0.01';
-    input.min = '0';
+    /* без min — разрешаем отрицательные (возвраты, корректировки) */
     input.value = isNum ? (val != null && val !== '' ? Number(val) : '') : (val || '');
     input.dataset.key = key;
     input.dataset.rowId = String(row.id);
     if (isNum) input.setAttribute('inputmode', 'decimal');
 
     input.addEventListener('blur', function () {
-      var tr = this.closest('tr');
+      var rowEl = this.closest('.cash-crm__grid-row');
       var id = parseInt(this.dataset.rowId, 10);
       var k = this.dataset.key;
       var raw = this.value;
@@ -96,10 +106,10 @@
       if (!isNum && String(prevVal || '') === String(v)) return;
       var payload = {};
       payload[k] = isNum ? v : v;
-      if (['application', 'state_duty', 'dkp', 'insurance', 'plates'].indexOf(k) >= 0 && tr) {
+      if (['application', 'state_duty', 'dkp', 'insurance', 'plates'].indexOf(k) >= 0 && rowEl) {
         var sum = 0;
         ['application', 'state_duty', 'dkp', 'insurance', 'plates'].forEach(function (key) {
-          var inp = tr.querySelector('input[data-key="' + key + '"]');
+          var inp = rowEl.querySelector('input[data-key="' + key + '"]');
           if (inp) sum += numVal(inp.value);
         });
         payload.total = sum;
@@ -107,10 +117,12 @@
       patchRow(id, payload)
         .then(function (updated) {
           updateRowInList(id, updated);
-          var totalSpan = tr && tr.querySelector('.cash-crm__row-total');
-          if (totalSpan && payload.total !== undefined) {
-            totalSpan.textContent = formatNumSpaces(payload.total);
-            totalSpan.classList.toggle('cash-crm__row-total--negative', payload.total < 0);
+          var totalWrap = rowEl && rowEl.querySelector('.cash-crm__row-total');
+          if (totalWrap) {
+            var total = numVal(updated.total);
+            var numSpan = totalWrap.querySelector('.cash-crm__amount-num');
+            if (numSpan) numSpan.textContent = formatNumOnly(total);
+            totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
           }
           renderTotal();
           msg('Сохранено', 'ok');
@@ -144,33 +156,33 @@
   }
 
   function renderRow(row, isNew) {
-    var tr = document.createElement('tr');
-    if (isNew) tr.classList.add('cash-crm__row-new');
-    tr.dataset.rowId = String(row.id);
+    var total = recalcTotal(row);
+    var rowEl = document.createElement('div');
+    rowEl.className = 'cash-crm__grid-row' + (isNew ? ' cash-crm__grid-row--new' : '');
+    rowEl.dataset.rowId = String(row.id);
 
-    var tdName = document.createElement('td');
-    tdName.className = 'cash-crm__td-name';
-    tdName.appendChild(makeInput(row, 'client_name', false));
-    tr.appendChild(tdName);
+    var cellName = document.createElement('div');
+    cellName.className = 'cash-crm__grid-cell cash-crm__grid-cell--name';
+    cellName.appendChild(makeInput(row, 'client_name', false));
+    rowEl.appendChild(cellName);
 
     ['application', 'state_duty', 'dkp', 'insurance', 'plates'].forEach(function (key) {
-      var td = document.createElement('td');
-      td.className = 'cash-crm__td-num';
-      td.appendChild(makeInput(row, key, true));
-      tr.appendChild(td);
+      var cell = document.createElement('div');
+      cell.className = 'cash-crm__grid-cell cash-crm__grid-cell--num';
+      cell.appendChild(makeInput(row, key, true));
+      rowEl.appendChild(cell);
     });
 
-    var total = recalcTotal(row);
-    var tdTotal = document.createElement('td');
-    tdTotal.className = 'cash-crm__td-num';
-    var totalSpan = document.createElement('span');
-    totalSpan.className = 'cash-crm__row-total' + (total < 0 ? ' cash-crm__row-total--negative' : '');
-    totalSpan.textContent = formatNumSpaces(total);
-    tdTotal.appendChild(totalSpan);
-    tr.appendChild(tdTotal);
+    var cellTotal = document.createElement('div');
+    cellTotal.className = 'cash-crm__grid-cell cash-crm__grid-cell--num';
+    var totalWrap = document.createElement('span');
+    totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
+    totalWrap.innerHTML = '<span class="cash-crm__amount-num">' + formatNumOnly(total) + '</span><span class="cash-crm__amount-currency"> ₽</span>';
+    cellTotal.appendChild(totalWrap);
+    rowEl.appendChild(cellTotal);
 
-    var tdDel = document.createElement('td');
-    tdDel.className = 'cash-crm__td-del';
+    var cellDel = document.createElement('div');
+    cellDel.className = 'cash-crm__grid-cell cash-crm__grid-cell--del';
     var btnDel = document.createElement('button');
     btnDel.type = 'button';
     btnDel.className = 'cash-crm__btn-del';
@@ -190,28 +202,31 @@
           msg('Ошибка: ' + (e.message || 'не удалось удалить'), 'err');
         });
     };
-    tdDel.appendChild(btnDel);
-    tr.appendChild(tdDel);
-    return tr;
+    cellDel.appendChild(btnDel);
+    rowEl.appendChild(cellDel);
+
+    return rowEl;
   }
 
   function renderTotal() {
     var total = rows.reduce(function (sum, r) { return sum + numVal(r.total); }, 0);
     if (!totalEl) return;
-    totalEl.textContent = formatNumSpaces(total);
-    totalEl.classList.toggle('cash-crm__total-value--negative', total < 0);
+    var numSpan = totalEl.querySelector('.cash-crm__amount-num');
+    if (numSpan) numSpan.textContent = formatNumOnly(total);
+    totalEl.classList.remove('cash-crm__total-value--negative', 'cash-crm__total-value--positive');
+    if (total < 0) totalEl.classList.add('cash-crm__total-value--negative');
+    else if (total > 0) totalEl.classList.add('cash-crm__total-value--positive');
   }
 
   function render() {
-    var tbody = document.getElementById('cashBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    if (!bodyEl) return;
+    bodyEl.innerHTML = '';
 
     if (rows.length === 0) {
-      var tr = document.createElement('tr');
-      tr.className = 'cash-crm__row-placeholder';
-      tr.innerHTML = '<td colspan="8" class="cash-crm__placeholder">Нет строк. Нажмите «Добавить строку», чтобы начать.</td>';
-      tbody.appendChild(tr);
+      var placeholderRow = document.createElement('div');
+      placeholderRow.className = 'cash-crm__grid-row cash-crm__grid-row--placeholder';
+      placeholderRow.innerHTML = '<div class="cash-crm__grid-cell cash-crm__placeholder">Нет строк. Нажмите «Добавить строку», чтобы начать.</div>';
+      bodyEl.appendChild(placeholderRow);
       renderTotal();
       return;
     }
@@ -221,12 +236,12 @@
       var d = dayKey(row);
       if (d && d !== lastDay) {
         lastDay = d;
-        var sep = document.createElement('tr');
-        sep.className = 'cash-crm__row-day';
-        sep.innerHTML = '<td colspan="8">' + dayLabel(d) + '</td>';
-        tbody.appendChild(sep);
+        var sepRow = document.createElement('div');
+        sepRow.className = 'cash-crm__grid-row-day';
+        sepRow.innerHTML = '<div class="cash-crm__grid-cell">' + dayLabel(d) + '</div>';
+        bodyEl.appendChild(sepRow);
       }
-      tbody.appendChild(renderRow(row, false));
+      bodyEl.appendChild(renderRow(row, false));
     });
     renderTotal();
   }
@@ -242,9 +257,8 @@
         render();
       })
       .catch(function (e) {
-        var tbody = document.getElementById('cashBody');
-        if (tbody) {
-          tbody.innerHTML = '<tr class="cash-crm__row-placeholder"><td colspan="8" class="cash-crm__placeholder">Ошибка загрузки: ' + (e.message || '') + '</td></tr>';
+        if (bodyEl) {
+          bodyEl.innerHTML = '<div class="cash-crm__grid-row cash-crm__grid-row--placeholder"><div class="cash-crm__grid-cell cash-crm__placeholder">Ошибка загрузки: ' + (e.message || '') + '</div></div>';
         }
         msg('Ошибка загрузки', 'err');
       });
@@ -270,19 +284,18 @@
       })
       .then(function (newRow) {
         rows.unshift(newRow);
-        var tbody = document.getElementById('cashBody');
-        tbody.innerHTML = '';
+        bodyEl.innerHTML = '';
         var lastDay = null;
         rows.forEach(function (row) {
           var d = dayKey(row);
           if (d && d !== lastDay) {
             lastDay = d;
-            var sep = document.createElement('tr');
-            sep.className = 'cash-crm__row-day';
-            sep.innerHTML = '<td colspan="8">' + dayLabel(d) + '</td>';
-            tbody.appendChild(sep);
+            var sepRow = document.createElement('div');
+            sepRow.className = 'cash-crm__grid-row-day';
+            sepRow.innerHTML = '<div class="cash-crm__grid-cell">' + dayLabel(d) + '</div>';
+            bodyEl.appendChild(sepRow);
           }
-          tbody.appendChild(renderRow(row, row.id === newRow.id));
+          bodyEl.appendChild(renderRow(row, row.id === newRow.id));
         });
         renderTotal();
         msg('Строка добавлена', 'ok');
