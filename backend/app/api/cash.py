@@ -1,6 +1,7 @@
 """API касс и смен: открытие/закрытие смены по павильонам; касса номеров (plate-rows)."""
 from decimal import Decimal
 from typing import Optional
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -10,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.logging_config import get_logger
 from app.api.auth import RequireCashAccess, RequirePlateAccess, UserInfo
-from app.models import CashShift, ShiftStatus, Payment, CashRow, PlateCashRow
+from app.models import CashShift, ShiftStatus, Payment, CashRow, PlateCashRow, PlatePayout
 from app.models.employee import EmployeeRole
 from app.schemas.cash import (
     ShiftOpen, ShiftClose, ShiftResponse, ShiftCurrentResponse,
@@ -332,3 +333,86 @@ async def delete_plate_cash_row(
         raise HTTPException(status_code=404, detail="Строка не найдена")
     await db.delete(row)
     await db.flush()
+
+
+# --- Реестр выдачи денег за номера (пав.1 -> пав.2) ---
+
+
+def _payout_to_dict(row: PlatePayout) -> dict:
+    return {
+        "id": row.id,
+        "created_at": row.created_at.isoformat() if row.created_at else None,
+        "client_name": row.client_name or "",
+        "amount": float(row.amount),
+        "paid_at": row.paid_at.isoformat() if row.paid_at else None,
+        "paid_by_id": row.paid_by_id,
+    }
+
+
+@router.get("/plate-payouts")
+async def list_plate_payouts(
+    db: AsyncSession = Depends(get_db),
+    user: UserInfo = Depends(RequireCashAccess),
+):
+    """Невыданные суммы за номера (для кассы павильона 1)."""
+    q = select(PlatePayout).where(PlatePayout.paid_at.is_(None)).order_by(PlatePayout.created_at)
+    r = await db.execute(q)
+    rows = r.scalars().all()
+    total = sum((row.amount for row in rows), Decimal("0"))
+    return {
+        "rows": [_payout_to_dict(row) for row in rows],
+        "total": float(total),
+    }
+
+
+@router.post("/plate-payouts/pay")
+async def pay_plate_payouts(
+    db: AsyncSession = Depends(get_db),
+    user: UserInfo = Depends(RequireCashAccess),
+):
+    """
+    Выдать деньги оператору номеров:
+    - уменьшить кассу документов на сумму всех невыплаченных номеров;
+    - добавить по каждой записи строку в кассу номеров;
+    - пометить записи как выплаченные.
+    """
+    r = await db.execute(
+        select(PlatePayout).where(PlatePayout.paid_at.is_(None)).order_by(PlatePayout.created_at)
+    )
+    payouts = r.scalars().all()
+    if not payouts:
+        raise HTTPException(status_code=400, detail="Нет номеров к выдаче")
+
+    total: Decimal = sum((p.amount for p in payouts), Decimal("0"))
+    if total <= 0:
+        raise HTTPException(status_code=400, detail="Сумма к выдаче нулевая")
+
+    # Строка в кассе документов: Номера — выдача (отрицательная сумма)
+    cash_row = CashRow(
+        client_name="Номера — выдача",
+        application=Decimal("0"),
+        state_duty=Decimal("0"),
+        dkp=Decimal("0"),
+        insurance=Decimal("0"),
+        plates=-total,
+        total=-total,
+    )
+    db.add(cash_row)
+
+    now = datetime.utcnow()
+
+    # В кассу номеров — по человеку отдельная строка
+    for p in payouts:
+        db.add(
+            PlateCashRow(
+                client_name=p.client_name,
+                amount=p.amount,
+            )
+        )
+        p.paid_at = now
+        p.paid_by_id = user.id
+        db.add(p)
+
+    await db.flush()
+    logger.info("Выдача денег за номера: строк=%s сумма=%s", len(payouts), total)
+    return {"count": len(payouts), "total": float(total)}

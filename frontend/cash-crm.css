@@ -87,6 +87,130 @@
   }
 }
 
+/* ----- Блок «Расчёты с номерами» ----- */
+.cash-payout {
+  margin-top: 32px;
+}
+
+.cash-payout__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.cash-payout__title {
+  margin: 0 0 4px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.cash-payout__subtitle {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.cash-payout__btn {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: none;
+  background: #0d6b5c;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.cash-payout__btn:hover {
+  background: #0a5549;
+}
+
+.cash-payout__btn:active {
+  transform: scale(0.98);
+}
+
+.cash-payout__card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 20px 12px 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
+}
+
+.cash-payout__summary {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.cash-payout__label {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.cash-payout__total {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.cash-payout__table-wrap {
+  max-height: 220px;
+  overflow-y: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.cash-payout__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.cash-payout__table th,
+.cash-payout__table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.cash-payout__table th {
+  background: #f9fafb;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: left;
+}
+
+.cash-payout__amount {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.cash-payout__empty {
+  text-align: center;
+  padding: 12px;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.cash-payout__msg {
+  margin: 8px 0 0 0;
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.cash-payout__msg--err {
+  color: #b91c1c;
+}
+
 /* ----- Table card ----- */
 .cash-crm__table-card {
   flex: 1;

@@ -11,7 +11,20 @@ from app.core.permissions import can_access_pavilion
 from app.api.auth import RequireFormAccess, RequireAnalyticsAccess, RequireOrdersListAccess, RequirePlateAccess, UserInfo
 
 logger = get_logger(__name__)
-from app.models import Order, OrderStatus, Payment, PaymentType, Employee, CashShift, ShiftStatus, CashRow, PlateStock, PlateReservation, FormHistory
+from app.models import (
+    Order,
+    OrderStatus,
+    Payment,
+    PaymentType,
+    Employee,
+    CashShift,
+    ShiftStatus,
+    CashRow,
+    PlateStock,
+    PlateReservation,
+    FormHistory,
+    PlatePayout,
+)
 from pydantic import BaseModel
 
 from app.schemas.order import OrderCreate, OrderResponse, OrderDetailResponse
@@ -470,6 +483,34 @@ async def update_order_status(
     if new_status == OrderStatus.PROBLEM and order.need_plate and qty > 0:
         await db.execute(delete(PlateReservation).where(PlateReservation.order_id == order.id))
         await db.flush()
+
+    # При завершении заказа с номерами — добавляем запись в реестр выдачи денег за номера
+    if new_status == OrderStatus.COMPLETED and order.need_plate:
+        # Проверяем, не создана ли уже запись
+        existing = await db.execute(select(PlatePayout).where(PlatePayout.order_id == order.id))
+        if existing.scalar_one_or_none() is None:
+            # Сумма по номерам: цена номеров из формы + все платежи INCOME_PAVILION2
+            base_amount = _plate_amount_from_order(order)
+            extra_sum = (
+                await db.execute(
+                    select(func.coalesce(func.sum(Payment.amount), 0)).where(
+                        Payment.order_id == order.id,
+                        Payment.type == PaymentType.INCOME_PAVILION2,
+                    )
+                )
+            ).scalar_one() or Decimal("0")
+            plate_amount = base_amount + extra_sum
+            if plate_amount > 0:
+                fd = order.form_data or {}
+                client_name = (fd.get("client_fio") or fd.get("client_legal_name") or "").strip() or "—"
+                db.add(
+                    PlatePayout(
+                        order_id=order.id,
+                        client_name=client_name,
+                        amount=plate_amount,
+                    )
+                )
+                await db.flush()
 
     order.status = new_status
     db.add(order)

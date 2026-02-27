@@ -72,10 +72,42 @@
         </div>
       </aside>
     </div>
+
+    <section class="cash-payout">
+      <div class="cash-payout__header">
+        <div>
+          <h2 class="cash-payout__title">Расчёты с номерами</h2>
+          <p class="cash-payout__subtitle">Сколько нужно передать из кассы документов в кассу номеров.</p>
+        </div>
+        <button type="button" class="cash-payout__btn" id="btnPayoutPay">Выдать деньги оператору номеров</button>
+      </div>
+      <div class="cash-payout__card">
+        <div class="cash-payout__summary">
+          <span class="cash-payout__label">Невыданные суммы за номера:</span>
+          <span class="cash-payout__total" id="payoutTotal">0 ₽</span>
+        </div>
+        <div class="cash-payout__table-wrap">
+          <table class="cash-payout__table">
+            <thead>
+              <tr>
+                <th>Дата</th>
+                <th>Клиент</th>
+                <th>Сумма</th>
+              </tr>
+            </thead>
+            <tbody id="payoutBody">
+              <tr><td colspan="3" class="cash-payout__empty">Загрузка…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cash-payout__msg" id="payoutMsg"></p>
+      </div>
+    </section>
   </div>
 
   <script src="auth.js"></script>
   <script src="header-common.js"></script>
   <script src="cash-crm.js"></script>
+  <script src="cash-payouts.js"></script>
 </body>
 </html>

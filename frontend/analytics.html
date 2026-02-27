@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Аналитика</title>
+  <title>Аналитика — в разработке</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
@@ -32,59 +32,15 @@
     <header class="header">
       <div>
         <h1 class="header__title">Аналитика</h1>
-        <p class="header__subtitle">Документы (павильон 1) и Номера (павильон 2)</p>
+        <p class="header__subtitle">Раздел временно отключён. Функция в разработке.</p>
       </div>
     </header>
-    <p class="text-muted" style="margin-bottom:0.5rem;">Обновить данные: кнопка ниже или перезагрузка страницы (<kbd>F5</kbd>).</p>
-    <button type="button" class="btn btn-refresh" id="btnRefresh">Обновить данные</button>
 
-    <div class="admin-block" style="margin-bottom: 2rem;">
-      <h2 style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 0.75rem;">Аналитика</h2>
-      <section id="sectionToday">
-        <h2>Сводка за день</h2>
-        <p class="text-caption" style="margin:0 0 0.5rem;">Данные за сегодня</p>
-        <div id="todayContent" class="loading">Загрузка…</div>
-      </section>
-
-      <section id="sectionMonth">
-        <h2>Сводка за месяц</h2>
-        <div class="filter-row">
-          <label>Дата с:</label>
-          <input type="date" id="monthDateFrom" title="Начало периода">
-          <label>по:</label>
-          <input type="date" id="monthDateTo" title="Конец периода">
-        </div>
-        <div id="monthContent" class="loading">Загрузка…</div>
-      </section>
-
-      <section id="sectionEmpAnalytics">
-        <h2>Учёт по сотрудникам</h2>
-        <div class="filter-row">
-          <label>Период:</label>
-          <select id="empPeriodFilter">
-            <option value="day">День</option>
-            <option value="month">Месяц</option>
-          </select>
-          <label>Дата с:</label>
-          <input type="date" id="empDateFrom">
-          <label>по:</label>
-          <input type="date" id="empDateTo">
-        </div>
-        <div id="empAnalyticsContent" class="loading">Загрузка…</div>
-      </section>
-
-      <div class="filter-row" style="margin-bottom:1rem;">
-        <label>Экспорт:</label>
-        <select id="exportPeriod">
-          <option value="day">Сводка за день</option>
-          <option value="month">Сводка за месяц</option>
-          <option value="employees">По сотрудникам</option>
-        </select>
-        <input type="date" id="exportDateFrom">
-        <input type="date" id="exportDateTo">
-        <button type="button" class="btn" id="btnExportCsv">Скачать CSV</button>
-      </div>
-    </div>
+    <section class="admin-block">
+      <p class="text-muted">
+        Раздел «Аналитика» сейчас недоступен. Как только отчёты будут готовы, они появятся здесь.
+      </p>
+    </section>
   </div>
 
   <script src="auth.js"></script>

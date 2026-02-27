@@ -11,6 +11,7 @@ from app.models.plate_stock import PlateStock
 from app.models.plate_reservation import PlateReservation
 from app.models.plate_defect import PlateDefect
 from app.models.form_history import FormHistory
+from app.models.plate_payout import PlatePayout
 
 __all__ = [
     "Base",
@@ -31,4 +32,5 @@ __all__ = [
     "PlateReservation",
     "PlateDefect",
     "FormHistory",
+    "PlatePayout",
 ]

@@ -114,6 +114,18 @@ async def ensure_columns_and_enum():
                 END IF;
             END $$;
         """))
+        # Реестр выдач денег за номера (между кассой документов и кассой номеров)
+        await conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS plate_payouts (
+                id SERIAL PRIMARY KEY,
+                created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT (now() AT TIME ZONE 'utc'),
+                order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+                client_name VARCHAR(255) NOT NULL DEFAULT '',
+                amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+                paid_at TIMESTAMP WITHOUT TIME ZONE,
+                paid_by_id INTEGER REFERENCES employees(id)
+            );
+        """))
         # Склад заготовок номеров
         await conn.execute(text("""
             CREATE TABLE IF NOT EXISTS plate_stock (
