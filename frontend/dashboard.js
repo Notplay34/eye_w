@@ -124,41 +124,59 @@
 
     var inner = document.getElementById('menuDropdownInner');
     inner.innerHTML = '';
-    var lastGroup = '';
+
+    function getGroupKey(item) {
+      var href = item.href || '';
+      if (/index\.html|cash-shifts\.html/i.test(href)) return 'Подготовка документов';
+      if (/plate-operator\.html|plate-cash\.html|warehouse\.html/i.test(href)) return 'Номера';
+      // всё остальное (admin, users, смена пароля, выход) — в админский блок
+      return 'Админ';
+    }
+
+    var groups = {
+      'Подготовка документов': [],
+      'Номера': [],
+      'Админ': [],
+    };
+
     (me.menu_items || []).forEach(function (item) {
-      if (item.divider) {
-        inner.appendChild(document.createElement('hr'));
-        return;
-      }
-      if (item.group && item.group !== lastGroup) {
-        lastGroup = item.group;
-        var groupEl = document.createElement('div');
-        groupEl.className = 'header__dropdown-group';
-        groupEl.textContent = item.group;
-        inner.appendChild(groupEl);
-      }
-      if (!item.label && !item.href) return;
-      var a = document.createElement('a');
-      a.href = item.href || '#';
-      a.textContent = item.label;
-      a.setAttribute('data-action', item.action || '');
-      a.setAttribute('data-id', item.id || '');
-      a.addEventListener('click', function (e) {
-        if (item.action === 'logout') {
-          e.preventDefault();
-          window.clearAuth();
-          window.location.href = 'login.html';
-          return;
-        }
-        if (item.action === 'change_password') {
-          e.preventDefault();
-          window.location.href = 'account.html';
-          return;
-        }
-        var d = document.getElementById('menuDropdown');
-        if (d) { d.classList.remove('header__dropdown--open'); d.setAttribute('aria-hidden', 'true'); }
+      if (!item || (!item.label && !item.href && !item.action)) return;
+      var key = getGroupKey(item);
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+
+    ['Подготовка документов', 'Номера', 'Админ'].forEach(function (key) {
+      var items = groups[key];
+      if (!items || !items.length) return;
+      var groupEl = document.createElement('div');
+      groupEl.className = 'header__dropdown-group';
+      groupEl.textContent = key;
+      inner.appendChild(groupEl);
+      items.forEach(function (item) {
+        if (!item.label && !item.href) return;
+        var a = document.createElement('a');
+        a.href = item.href || '#';
+        a.textContent = item.label;
+        a.setAttribute('data-action', item.action || '');
+        a.setAttribute('data-id', item.id || '');
+        a.addEventListener('click', function (e) {
+          if (item.action === 'logout') {
+            e.preventDefault();
+            window.clearAuth();
+            window.location.href = 'login.html';
+            return;
+          }
+          if (item.action === 'change_password') {
+            e.preventDefault();
+            window.location.href = 'account.html';
+            return;
+          }
+          var d = document.getElementById('menuDropdown');
+          if (d) { d.classList.remove('header__dropdown--open'); d.setAttribute('aria-hidden', 'true'); }
+        });
+        inner.appendChild(a);
       });
-      inner.appendChild(a);
     });
   }
 
