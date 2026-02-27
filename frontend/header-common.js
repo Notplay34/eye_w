@@ -23,7 +23,8 @@
       menu_items.push({ id: 'warehouse', label: 'Склад заготовок', href: 'warehouse.html' });
     }
     if (role === 'ROLE_ADMIN') {
-      menu_items.push({ id: 'analytics', label: 'Аналитика', href: 'analytics.html' });
+      menu_items.push({ id: 'analytics_docs', label: 'Аналитика — Документы', href: 'analytics-docs.html' });
+      menu_items.push({ id: 'analytics_plates', label: 'Аналитика — Номера', href: 'analytics-plates.html' });
       menu_items.push({ id: 'admin', label: 'Админка', href: 'admin.html' });
       menu_items.push({ id: 'users', label: 'Управление аккаунтами', href: 'users.html' });
     }

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>if(!localStorage.getItem('eye_w_token'))window.location.replace('login.html');</script>
+  <title>Аналитика — Номера</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=PT+Serif:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="header header--dashboard">
+    <div class="header__row">
+      <div class="header__brand">
+        <h1 class="header__title">РегДок</h1>
+      </div>
+      <div class="header__actions">
+        <div class="header__menu-wrap">
+          <span class="header__user-name" id="headerUserName" title="Открыть меню">—</span>
+          <button type="button" class="header__menu-btn" id="btnMenu" aria-label="Меню" title="Меню">⋮</button>
+          <a href="login.html" class="header__logout-link" id="headerLogoutLink" onclick="window.clearAuth && window.clearAuth();">Выйти</a>
+          <div class="header__dropdown" id="menuDropdown" aria-hidden="true">
+            <div class="header__dropdown-inner" id="menuDropdownInner"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin">
+    <header class="header">
+      <div>
+        <h1 class="header__title">Аналитика — Номера</h1>
+        <p class="header__subtitle">Павильон 2. Операции с государственными номерами.</p>
+      </div>
+    </header>
+
+    <section class="analytics-section" id="sectionKpiPlates">
+      <div class="analytics-section__header">
+        <h2 class="text-section">Ключевые показатели — Номера</h2>
+        <div class="analytics-section__controls">
+          <label for="summaryPeriodPlates" class="text-caption">Период:</label>
+          <select id="summaryPeriodPlates">
+            <option value="day">День</option>
+            <option value="week">Неделя</option>
+            <option value="month">Месяц</option>
+          </select>
+        </div>
+      </div>
+      <div id="kpiPlatesContent" class="analytics-block analytics-block--loading">
+        <div class="analytics-block__loader">Загрузка…</div>
+      </div>
+    </section>
+
+    <section class="analytics-section" id="sectionDynamicsPlates">
+      <div class="analytics-section__header">
+        <h2 class="text-section">Динамика — Номера</h2>
+        <div class="analytics-section__controls">
+          <label for="dynamicsGroupPlates" class="text-caption">Группировка:</label>
+          <select id="dynamicsGroupPlates">
+            <option value="day">По дням</option>
+            <option value="week">По неделям</option>
+            <option value="month">По месяцам</option>
+          </select>
+        </div>
+      </div>
+      <div id="dynamicsPlatesContent" class="analytics-block analytics-block--loading">
+        <div class="analytics-block__loader">Загрузка…</div>
+      </div>
+    </section>
+
+    <section class="analytics-section" id="sectionEmployeesPlates">
+      <div class="analytics-section__header">
+        <h2 class="text-section">Сотрудники — Номера</h2>
+        <div class="analytics-section__controls">
+          <label for="empPeriodPlates" class="text-caption">Период:</label>
+          <select id="empPeriodPlates">
+            <option value="day">День</option>
+            <option value="week">Неделя</option>
+            <option value="month">Месяц</option>
+          </select>
+        </div>
+      </div>
+      <div id="employeesPlatesContent" class="analytics-block analytics-block--loading">
+        <div class="analytics-block__loader">Загрузка…</div>
+      </div>
+    </section>
+  </div>
+
+  <script src="auth.js"></script>
+  <script src="header-common.js"></script>
+  <script src="analytics-plates.js"></script>
+</body>
+</html>
+

@@ -134,9 +134,15 @@ def get_menu_items(role: str) -> List[dict]:
     # Управление: аналитика и админка — только директор; аккаунты — только директор
     if can_access_resource(role, Resource.ANALYTICS):
         items.append({
-            "id": "analytics",
-            "label": "Аналитика",
-            "href": "analytics.html",
+            "id": "analytics_docs",
+            "label": "Аналитика — Документы",
+            "href": "analytics-docs.html",
+            "group": "Управление",
+        })
+        items.append({
+            "id": "analytics_plates",
+            "label": "Аналитика — Номера",
+            "href": "analytics-plates.html",
             "group": "Управление",
         })
         items.append({
