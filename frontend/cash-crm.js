@@ -40,7 +40,8 @@
   function toInputValue(n) {
     var num = Number(n);
     if (!isFinite(num)) return '';
-    // Всегда показываем значение, включая ноль, чтобы поле не выглядело «исчезнувшим»
+    // Для 0 отображаем пустоту (чтобы не захламлять таблицу)
+    if (num === 0) return '';
     return num.toFixed(2);
   }
 
