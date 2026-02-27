@@ -45,10 +45,21 @@
 
   /** Только число с пробелами, без " ₽" — для вставки в разметку */
   function formatNumOnly(n) {
+    var num = Number(n);
+    if (isNaN(num)) num = 0;
     return new Intl.NumberFormat('ru-RU', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(n).replace(/\u00a0/g, ' ');
+    }).format(num).replace(/\u00a0/g, ' ');
+  }
+
+  // Значение для числовых инпутов (input[type=number]) — без локализованных пробелов и запятых,
+  // чтобы браузер не считал его невалидным и не очищал поле при повторном фокусе.
+  function formatNumForInput(v) {
+    var n = Number(v);
+    if (!isFinite(n)) return '';
+    // Оставляем 2 знака после точки, точка — валидный разделитель для type=number
+    return n.toFixed(2);
   }
 
   function patchRow(rowId, payload) {
@@ -90,14 +101,16 @@
   /** Редактируемое поле «Итого» по строке — можно сразу ввести минус */
   function makeTotalInput(row, initialTotal, rowEl) {
     var id = row.id;
+    var total = Number(initialTotal);
+    if (isNaN(total)) total = 0;
     var wrap = document.createElement('span');
-    wrap.className = 'cash-crm__row-total ' + rowTotalClass(initialTotal);
+    wrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
 
     var inp = document.createElement('input');
     inp.type = 'number';
     inp.step = '0.01';
     inp.className = 'cash-crm__input cash-crm__input--num cash-crm__input--total';
-    inp.value = initialTotal === 0 ? '' : initialTotal;
+    inp.value = total === 0 ? '' : total;
     inp.dataset.rowId = String(id);
     inp.setAttribute('inputmode', 'decimal');
 
@@ -111,7 +124,12 @@
 
     inp.addEventListener('blur', function () {
       var v = numVal(this.value);
-      this.value = v === 0 && this.value.trim() !== '' ? '0' : (v === 0 ? '' : formatNum(v));
+      // Для числового инпута используем не локализованный формат, иначе браузер может очистить значение
+      if (this.value.trim() === '') {
+        this.value = '';
+      } else {
+        this.value = formatNumForInput(v);
+      }
       var r = rows.find(function (x) { return x.id === id; });
       if (!r) return;
       if (r.total === v && !this.dataset.dirty) return;
@@ -149,7 +167,12 @@
     input.className = 'cash-crm__input' + (isNum ? ' cash-crm__input--num' : '');
     input.step = '0.01';
     /* без min — разрешаем отрицательные (возвраты, корректировки) */
-    input.value = isNum ? (val != null && val !== '' ? Number(val) : '') : (val || '');
+    if (isNum) {
+      var n = numVal(val);
+      input.value = n === 0 ? '' : formatNumForInput(n);
+    } else {
+      input.value = val || '';
+    }
     input.dataset.key = key;
     input.dataset.rowId = String(row.id);
     if (isNum) input.setAttribute('inputmode', 'decimal');
@@ -168,7 +191,12 @@
       var raw = this.value;
       var v = isNum ? numVal(raw) : raw.trim();
       if (isNum && key !== 'client_name') {
-        this.value = v === 0 ? '' : formatNum(v);
+        // Не используем локализованный формат для value числового инпута
+        if (raw.trim() === '' || v === 0) {
+          this.value = raw.trim() === '' ? '' : formatNumForInput(0);
+        } else {
+          this.value = formatNumForInput(v);
+        }
       }
       var prev = rows.find(function (r) { return r.id === id; });
       if (!prev) return;
@@ -190,7 +218,7 @@
           var totalInp = totalWrap && totalWrap.querySelector('input.cash-crm__input--total');
           var total = rowTotalNum(updated);
           if (totalWrap) totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
-          if (totalInp) totalInp.value = total === 0 ? '' : formatNum(total);
+          if (totalInp) totalInp.value = total === 0 ? '' : formatNumForInput(total);
           renderTotal();
           msg('Сохранено', 'ok');
         })
@@ -223,7 +251,7 @@
   }
 
   function renderRow(row, isNew) {
-    var total = recalcTotal(row);
+    var total = rowTotalNum(row);
     var rowEl = document.createElement('div');
     rowEl.className = 'cash-crm__grid-row' + (isNew ? ' cash-crm__grid-row--new' : '');
     rowEl.dataset.rowId = String(row.id);
@@ -274,6 +302,8 @@
 
   function renderTotal() {
     var total = rows.reduce(function (sum, r) { return sum + rowTotalNum(r); }, 0);
+    total = Number(total);
+    if (isNaN(total)) total = 0;
     if (!totalEl) return;
     var numSpan = totalEl.querySelector('.cash-crm__amount-num');
     if (numSpan) numSpan.textContent = formatNumOnly(total);
@@ -336,8 +366,8 @@
         return r.json();
       })
       .then(function (data) {
-        rows = data || [];
-        render();
+        rows = Array.isArray(data) ? data : [];
+        if (bodyEl) render();
       })
       .catch(function (e) {
         if (bodyEl) {
@@ -347,7 +377,16 @@
       });
   }
 
-  document.getElementById('btnAddRow').onclick = function () {
+  function run() {
+    bodyEl = document.getElementById('cashBody');
+    totalEl = document.getElementById('cashTotalCell');
+    msgEl = document.getElementById('cashMsg');
+    if (bodyEl) load();
+    var btn = document.getElementById('btnAddRow');
+    if (btn) btn.onclick = addRow;
+  }
+
+  function addRow() {
     fetchApi(API + '/cash/rows', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -386,7 +425,11 @@
       .catch(function (e) {
         msg('Ошибка: ' + (e.message || 'не удалось добавить'), 'err');
       });
-  };
+  }
 
-  load();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
 })();

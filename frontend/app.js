@@ -78,8 +78,10 @@
   var currentTime = el('currentTime');
 
   function num(val) {
-    var n = parseFloat(val);
-    return isNaN(n) ? 0 : Math.max(0, n);
+    if (val === null || val === undefined || val === '') return 0;
+    var s = String(val).replace(/\s/g, '').replace(',', '.');
+    var n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
   }
 
   function getStateDuty() {
