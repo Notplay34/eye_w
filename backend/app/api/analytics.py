@@ -181,6 +181,7 @@ async def analytics_employees(
     period: str = Query("day", description="day | week | month"),
     date_from: Optional[str] = Query(None, description="Начало периода (YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="Конец периода (YYYY-MM-DD)"),
+    kind: str = Query("all", description="all | docs | plates"),
     db: AsyncSession = Depends(get_db),
     _user: UserInfo = Depends(RequireAnalyticsAccess),
 ):
@@ -190,11 +191,23 @@ async def analytics_employees(
 
     from app.models import Employee
 
+    # Фильтр по типам платежей для раздельной аналитики документов/номеров
+    if kind not in {"all", "docs", "plates"}:
+        kind = "all"
+
+    type_filter = None
+    if kind == "docs":
+        type_filter = [PaymentType.STATE_DUTY, PaymentType.INCOME_PAVILION1]
+    elif kind == "plates":
+        type_filter = [PaymentType.INCOME_PAVILION2]
+
     # Общая выручка за период для расчёта долей
-    q_total = (
-        select(func.coalesce(func.sum(Payment.amount), 0))
-        .where(Payment.created_at >= start, Payment.created_at < end)
+    q_total = select(func.coalesce(func.sum(Payment.amount), 0)).where(
+        Payment.created_at >= start,
+        Payment.created_at < end,
     )
+    if type_filter is not None:
+        q_total = q_total.where(Payment.type.in_(type_filter))
     total_revenue: Decimal = (await db.execute(q_total)).scalar_one() or Decimal("0")
 
     q = (
@@ -206,6 +219,8 @@ async def analytics_employees(
         .where(Payment.created_at >= start, Payment.created_at < end)
         .group_by(Payment.employee_id)
     )
+    if type_filter is not None:
+        q = q.where(Payment.type.in_(type_filter))
     result = await db.execute(q)
     rows = result.all()
 

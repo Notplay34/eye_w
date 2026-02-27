@@ -69,14 +69,21 @@
 
       var cards = [];
       cards.push({
+        key: 'income_pavilion2',
+        label: 'Доход — Номера (павильон 2)',
+        current: cur.income_pavilion2,
+        previous: prev.income_pavilion2,
+        highlight: true,
+      });
+      cards.push({
         key: 'total_revenue',
-        label: 'Общая выручка',
+        label: 'Общая выручка (все павильоны)',
         current: cur.total_revenue,
         previous: prev.total_revenue,
       });
       cards.push({
         key: 'net_income',
-        label: 'Чистый доход',
+        label: 'Чистый доход (все павильоны)',
         current: cur.net_income,
         previous: prev.net_income,
       });
@@ -94,22 +101,9 @@
       });
       cards.push({
         key: 'orders_count',
-        label: 'Заказов',
+        label: 'Заказов (все павильоны)',
         current: cur.orders_count,
         previous: prev.orders_count,
-      });
-      cards.push({
-        key: 'income_pavilion2',
-        label: 'Доход — Номера (павильон 2)',
-        current: cur.income_pavilion2,
-        previous: prev.income_pavilion2,
-        highlight: true,
-      });
-      cards.push({
-        key: 'income_pavilion1',
-        label: 'Доход — Документы (павильон 1)',
-        current: cur.income_pavilion1,
-        previous: prev.income_pavilion1,
       });
 
       var html = '<div class="kpi-grid">';
@@ -199,7 +193,7 @@
     var period = getEmpPeriodPlates();
     try {
       var r = await fetchApi(
-        API_BASE + '/analytics/employees?period=' + encodeURIComponent(period)
+        API_BASE + '/analytics/employees?period=' + encodeURIComponent(period) + '&kind=plates'
       );
       if (!r.ok) throw new Error(r.statusText);
       var data = await r.json();
