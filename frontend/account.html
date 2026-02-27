@@ -92,11 +92,9 @@
       if (['ROLE_OPERATOR', 'ROLE_PLATE_OPERATOR', 'ROLE_MANAGER', 'ROLE_ADMIN'].indexOf(user.role) >= 0) {
         document.getElementById('linkCash').style.display = 'block';
       }
-      if (user.role === 'ROLE_MANAGER' || user.role === 'ROLE_ADMIN') {
+      if (user.role === 'ROLE_ADMIN') {
         document.getElementById('linkAnalytics').style.display = 'block';
         document.getElementById('linkAdmin').style.display = 'block';
-      }
-      if (user.role === 'ROLE_ADMIN') {
         document.getElementById('linkUsers').style.display = 'block';
       }
       document.getElementById('linkLogout').addEventListener('click', function (e) {

@@ -22,10 +22,9 @@
       menu_items.push({ id: 'plate_cash', label: 'Касса номеров', href: 'plate-cash.html' });
       menu_items.push({ id: 'warehouse', label: 'Склад заготовок', href: 'warehouse.html' });
     }
-    if (role === 'ROLE_MANAGER' || role === 'ROLE_ADMIN') {
-      menu_items.push({ id: 'admin', label: 'Админка', href: 'admin.html' });
-    }
     if (role === 'ROLE_ADMIN') {
+      menu_items.push({ id: 'analytics', label: 'Аналитика', href: 'analytics.html' });
+      menu_items.push({ id: 'admin', label: 'Админка', href: 'admin.html' });
       menu_items.push({ id: 'users', label: 'Управление аккаунтами', href: 'users.html' });
     }
     menu_items.push({ id: '_div', label: '', divider: true });

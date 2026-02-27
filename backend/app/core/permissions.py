@@ -38,7 +38,7 @@ RESOURCE_ROLES = {
     Resource.CASH_P1: [EmployeeRole.ROLE_OPERATOR, EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN],
     Resource.CASH_P2: [EmployeeRole.ROLE_PLATE_OPERATOR, EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN],
     Resource.WAREHOUSE: [EmployeeRole.ROLE_PLATE_OPERATOR, EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN],
-    Resource.ANALYTICS: [EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN],
+    Resource.ANALYTICS: [EmployeeRole.ROLE_ADMIN],
     Resource.FINANCE: [EmployeeRole.ROLE_MANAGER, EmployeeRole.ROLE_ADMIN],
     Resource.USERS: [EmployeeRole.ROLE_ADMIN],
     Resource.SETTINGS: [EmployeeRole.ROLE_ADMIN],
@@ -131,8 +131,14 @@ def get_menu_items(role: str) -> List[dict]:
             "group": "Касса (павильон 1)",
         })
 
-    # Управление: админка (отчёты) — менеджер и админ; аккаунты — только админ
+    # Управление: аналитика и админка — только директор; аккаунты — только директор
     if can_access_resource(role, Resource.ANALYTICS):
+        items.append({
+            "id": "analytics",
+            "label": "Аналитика",
+            "href": "analytics.html",
+            "group": "Управление",
+        })
         items.append({
             "id": "admin",
             "label": "Админка",

@@ -39,10 +39,9 @@
     if (role === 'ROLE_OPERATOR' || role === 'ROLE_MANAGER' || role === 'ROLE_ADMIN') {
       menu_items.push({ id: 'cash_p1', label: 'Касса и смены', href: 'cash-shifts.html', group: 'Касса (павильон 1)' });
     }
-    if (role === 'ROLE_MANAGER' || role === 'ROLE_ADMIN') {
-      menu_items.push({ id: 'admin', label: 'Админка', href: 'admin.html', group: 'Управление' });
-    }
     if (role === 'ROLE_ADMIN') {
+      menu_items.push({ id: 'analytics', label: 'Аналитика', href: 'analytics.html', group: 'Управление' });
+      menu_items.push({ id: 'admin', label: 'Админка', href: 'admin.html', group: 'Управление' });
       menu_items.push({ id: 'users', label: 'Управление аккаунтами', href: 'users.html', group: 'Управление' });
     }
     menu_items.push({ id: '_div', label: '', divider: true });
