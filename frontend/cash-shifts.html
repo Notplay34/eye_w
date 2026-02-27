@@ -70,10 +70,13 @@
         <div class="cash-crm__total-value" id="cashTotalCell">
           <span class="cash-crm__amount-num">0</span><span class="cash-crm__amount-currency"> ₽</span>
         </div>
+        <button type="button" class="cash-payout__chip" id="btnPayoutToggle">
+          Номера: к выдаче <span id="payoutTotalShort">0 ₽</span>
+        </button>
       </aside>
     </div>
 
-    <section class="cash-payout">
+    <section class="cash-payout" id="cashPayoutPanel" hidden>
       <div class="cash-payout__header">
         <div>
           <h2 class="cash-payout__title">Расчёты с номерами</h2>

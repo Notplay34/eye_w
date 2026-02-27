@@ -89,7 +89,7 @@
 
 /* ----- Блок «Расчёты с номерами» ----- */
 .cash-payout {
-  margin-top: 32px;
+  margin-top: 24px;
 }
 
 .cash-payout__header {
@@ -209,6 +209,30 @@
 
 .cash-payout__msg--err {
   color: #b91c1c;
+}
+
+/* Чип под «Итого в кассе» */
+.cash-payout__chip {
+  margin-top: 8px;
+  padding: 6px 10px;
+  width: 100%;
+  border-radius: 999px;
+  border: none;
+  background: #f3f4ff;
+  color: #111827;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: inherit;
+}
+
+.cash-payout__chip:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 /* ----- Table card ----- */

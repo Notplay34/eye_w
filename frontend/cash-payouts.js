@@ -6,10 +6,13 @@
 
   var bodyEl = document.getElementById('payoutBody');
   var totalEl = document.getElementById('payoutTotal');
+  var totalShortEl = document.getElementById('payoutTotalShort');
   var msgEl = document.getElementById('payoutMsg');
   var btnEl = document.getElementById('btnPayoutPay');
+  var toggleEl = document.getElementById('btnPayoutToggle');
+  var panelEl = document.getElementById('cashPayoutPanel');
 
-  if (!bodyEl || !totalEl || !btnEl) return;
+  if (!bodyEl || !totalEl || !btnEl || !toggleEl || !panelEl) return;
 
   function formatMoney(n) {
     var num = Number(n || 0);
@@ -47,7 +50,15 @@
       });
     }
 
-    totalEl.textContent = formatMoney(total);
+    var formatted = formatMoney(total);
+    totalEl.textContent = formatted;
+    totalShortEl.textContent = formatted;
+
+    // Если нечего выдавать — делаем чип бледным и панель по умолчанию закрытой
+    toggleEl.disabled = !rows.length;
+    if (!rows.length && !panelEl.hasAttribute('hidden')) {
+      panelEl.setAttribute('hidden', 'hidden');
+    }
   }
 
   function load() {
@@ -87,9 +98,7 @@
       })
       .then(function (res) {
         setMsg('Выдано за ' + (res.count || 0) + ' заказ(ов), сумма ' + formatMoney(res.total || 0) + '.', false);
-        // Обновляем реестр и общую кассу (через перезагрузку страницы, чтобы не ломать расчёты)
         load();
-        // Касса документов пересчитывается на бекенде, фронт можно просто обновить руками при следующем действии
       })
       .catch(function (e) {
         setMsg('Ошибка выдачи: ' + (e.message || ''), true);
@@ -97,6 +106,15 @@
   }
 
   btnEl.addEventListener('click', pay);
+
+  toggleEl.addEventListener('click', function () {
+    var isHidden = panelEl.hasAttribute('hidden');
+    if (isHidden) {
+      panelEl.removeAttribute('hidden');
+    } else {
+      panelEl.setAttribute('hidden', 'hidden');
+    }
+  });
   load();
 })();
 
