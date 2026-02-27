@@ -46,6 +46,7 @@
       </div>
       <div class="menu-group" id="menuGroupAdmin">
         <div class="menu-group__title">Управление</div>
+        <a href="analytics.html" id="linkAnalytics" style="display:none;">Аналитика</a>
         <a href="admin.html" id="linkAdmin" style="display:none;">Админка</a>
         <a href="users.html" id="linkUsers" style="display:none;">Управление аккаунтами</a>
       </div>
@@ -92,6 +93,7 @@
         document.getElementById('linkCash').style.display = 'block';
       }
       if (user.role === 'ROLE_MANAGER' || user.role === 'ROLE_ADMIN') {
+        document.getElementById('linkAnalytics').style.display = 'block';
         document.getElementById('linkAdmin').style.display = 'block';
       }
       if (user.role === 'ROLE_ADMIN') {
