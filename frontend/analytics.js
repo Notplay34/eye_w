@@ -45,11 +45,11 @@
       var d = await r.json();
       todayEl.innerHTML = [
         '<div class="stats">',
-        '<div class="stat"><strong>' + Number(d.total_revenue) + ' ₽</strong><span>Выручка за день</span></div>',
+        '<div class="stat"><strong>' + Number(d.total_revenue) + ' ₽</strong><span>Выручка за день (всего)</span></div>',
         '<div class="stat"><strong>' + (d.orders_count || 0) + '</strong><span>Оплаченных заказов</span></div>',
         '<div class="stat"><strong>' + Number(d.state_duty_total) + ' ₽</strong><span>Госпошлина</span></div>',
-        '<div class="stat"><strong>' + Number(d.income_pavilion1) + ' ₽</strong><span>Доход павильон 1</span></div>',
-        '<div class="stat"><strong>' + Number(d.income_pavilion2) + ' ₽</strong><span>Доход павильон 2</span></div>',
+        '<div class="stat"><strong>' + Number(d.income_pavilion1) + ' ₽</strong><span>Доход — Документы (павильон 1)</span></div>',
+        '<div class="stat"><strong>' + Number(d.income_pavilion2) + ' ₽</strong><span>Доход — Номера (павильон 2)</span></div>',
         '</div>',
       ].join('');
     } catch (e) {
@@ -65,11 +65,11 @@
       var d = await r.json();
       monthEl.innerHTML = [
         '<div class="stats">',
-        '<div class="stat"><strong>' + Number(d.total_revenue) + ' ₽</strong><span>Выручка за месяц</span></div>',
+        '<div class="stat"><strong>' + Number(d.total_revenue) + ' ₽</strong><span>Выручка за месяц (всего)</span></div>',
         '<div class="stat"><strong>' + (d.orders_count || 0) + '</strong><span>Оплаченных заказов</span></div>',
         '<div class="stat"><strong>' + Number(d.state_duty_total) + ' ₽</strong><span>Госпошлина</span></div>',
-        '<div class="stat"><strong>' + Number(d.income_pavilion1) + ' ₽</strong><span>Доход павильон 1</span></div>',
-        '<div class="stat"><strong>' + Number(d.income_pavilion2) + ' ₽</strong><span>Доход павильон 2</span></div>',
+        '<div class="stat"><strong>' + Number(d.income_pavilion1) + ' ₽</strong><span>Доход — Документы (павильон 1)</span></div>',
+        '<div class="stat"><strong>' + Number(d.income_pavilion2) + ' ₽</strong><span>Доход — Номера (павильон 2)</span></div>',
         '</div>',
       ].join('');
     } catch (e) {
