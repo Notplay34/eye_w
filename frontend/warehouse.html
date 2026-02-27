@@ -77,7 +77,8 @@
   if (!window.getToken || !window.getToken()) return;
 
   var user = window.getUser();
-  if (user) document.getElementById('userName').textContent = user.name || '';
+  var nameEl = document.getElementById('userName');
+  if (user && nameEl) nameEl.textContent = user.name || '';
 
   function msg(t, isErr) {
     var el = document.getElementById('warehouseMsg');
