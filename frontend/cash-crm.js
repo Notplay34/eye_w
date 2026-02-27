@@ -39,7 +39,8 @@
 
   function toInputValue(n) {
     var num = Number(n);
-    if (!isFinite(num) || num === 0) return '';
+    if (!isFinite(num)) return '';
+    // Всегда показываем значение, включая ноль, чтобы поле не выглядело «исчезнувшим»
     return num.toFixed(2);
   }
 
