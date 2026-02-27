@@ -42,8 +42,9 @@
       <table class="plate-table" id="orderTable" style="display:none">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>№</th>
             <th>Клиент</th>
+            <th>Марка, модель</th>
             <th>Сумма</th>
             <th title="Заявление на номера">Заявл.</th>
             <th>Статус</th>
@@ -114,7 +115,7 @@
         }
         empty.style.display = 'none';
         table.style.display = 'table';
-        orders.forEach(function (o) {
+        orders.forEach(function (o, index) {
           var row = document.createElement('tr');
           var clientEsc = (o.client || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
           var plateAmt = o.plate_amount != null ? o.plate_amount : o.total_amount;
@@ -124,8 +125,9 @@
           var payBtn = (o.debt || 0) > 0 ? '<button type="button" class="btn btn-sm btn--secondary" data-order="' + o.id + '" data-public-id="' + (o.public_id || o.id) + '" data-pay="1">Доплата</button>' : '';
           var docLink = '<a href="#" class="doc-link" title="Заявление на номера" data-order-id="' + o.id + '" data-doc="zaiavlenie_na_nomera.docx" aria-label="Заявление на номера">&#128196;</a>';
           row.innerHTML =
-            '<td>' + (o.public_id || o.id) + '</td>' +
+            '<td>' + (index + 1) + '</td>' +
             '<td>' + (o.client || '—') + '</td>' +
+            '<td>' + (o.brand_model || '—') + '</td>' +
             '<td>' + fmt(o.plate_amount != null ? o.plate_amount : o.total_amount) + '</td>' +
             '<td>' + docLink + '</td>' +
             '<td><span class="status status-' + o.status + '">' + (STATUS_LABELS[o.status] || o.status) + '</span></td>' +

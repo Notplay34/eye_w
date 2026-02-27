@@ -52,7 +52,8 @@
         <input type="password" id="formPassword" autocomplete="new-password">
         <label>Роль</label>
         <select id="formRole">
-          <option value="ROLE_OPERATOR">Оператор</option>
+          <option value="ROLE_OPERATOR">Оператор документов</option>
+          <option value="ROLE_PLATE_OPERATOR">Оператор номеров</option>
           <option value="ROLE_MANAGER">Управляющий</option>
           <option value="ROLE_ADMIN">Директор</option>
         </select>
@@ -84,7 +85,12 @@
       var editingId = null;
 
       function roleLabel(r) {
-        return { ROLE_OPERATOR: 'Оператор', ROLE_MANAGER: 'Управляющий', ROLE_ADMIN: 'Директор' }[r] || r;
+        return {
+          ROLE_OPERATOR: 'Оператор документов',
+          ROLE_PLATE_OPERATOR: 'Оператор номеров',
+          ROLE_MANAGER: 'Управляющий',
+          ROLE_ADMIN: 'Директор'
+        }[r] || r;
       }
 
       function loadList() {

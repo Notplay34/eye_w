@@ -221,6 +221,7 @@ async def list_orders_for_plate(
         total_paid = float(total_paid or 0)
         fd = order.form_data or {}
         client = fd.get("client_fio") or fd.get("client_legal_name") or "—"
+        brand_model = fd.get("brand_model") or ""
         plate_only = _plate_amount_from_order(order) + Decimal(str(pay_extra_sums.get(order.id, 0)))
         out.append({
             "id": order.id,
@@ -230,6 +231,7 @@ async def list_orders_for_plate(
             "plate_amount": float(plate_only),
             "income_pavilion2": float(order.income_pavilion2),
             "client": client,
+            "brand_model": brand_model,
             "total_paid": total_paid,
             "debt": float(order.total_amount) - total_paid,
             "created_at": order.created_at.isoformat() if order.created_at else "",
