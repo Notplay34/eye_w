@@ -282,7 +282,7 @@
           var sep = (issueBtn && CAN_DELETE.indexOf(o.status) >= 0) ? ' ' : '';
           var deleteBtn = CAN_DELETE.indexOf(o.status) >= 0 ? '<button type="button" class="btn btn-sm btn--danger-like" data-order="' + o.id + '" data-status="PROBLEM" data-delete="1">Удалить</button>' : '';
           var payBtn = (o.debt || 0) > 0 ? '<button type="button" class="btn btn-sm btn--secondary" data-order="' + o.id + '" data-public-id="' + (o.public_id || o.id) + '" data-pay="1">Доплата</button>' : '';
-          var docLink = '<a href="#" class="doc-link" data-order-id="' + o.id + '" data-doc="zaiavlenie_na_nomera.docx">📄</a>';
+          var docLink = '<a href="#" class="doc-link" data-order-id="' + o.id + '" data-doc="number.docx">📄</a>';
           return '<tr><td>' + (o.public_id || o.id) + '</td><td>' + (o.client || '—') + '</td><td>' + formatMoney(o.plate_amount != null ? o.plate_amount : o.total_amount) + '</td><td>' + docLink + '</td><td><span class="status status-' + o.status + '">' + (STATUS_LABELS[o.status] || o.status) + '</span></td><td><div class="btn-group">' + issueBtn + sep + deleteBtn + payBtn + '</div></td></tr>';
         }).join('');
         bindPlateActions();
@@ -329,7 +329,7 @@
       a.addEventListener('click', function (e) {
         e.preventDefault();
         var orderId = parseInt(a.getAttribute('data-order-id'), 10);
-        fetchApi(API + '/orders/' + orderId + '/documents/zaiavlenie_na_nomera.docx').then(function (r) {
+        fetchApi(API + '/orders/' + orderId + '/documents/number.docx').then(function (r) {
           if (!r.ok) throw new Error('Документ');
           return r.blob();
         }).then(function (blob) {
