@@ -117,7 +117,9 @@
     return sum;
   }
 
-  /** Вводимое поле total по строке (редактируемое, допускает минус) */
+  /** Вводимое поле total по строке (редактируемое, допускает минус).
+   * Используем type="text", чтобы браузер не очищал значение из-за локали.
+   */
   function buildTotalCell(row) {
     var id = row.id;
     var total = rowTotalNum(row);
@@ -125,8 +127,7 @@
     wrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
 
     var input = document.createElement('input');
-    input.type = 'number';
-    input.step = '0.01';
+    input.type = 'text';
     input.className = 'cash-crm__input cash-crm__input--num cash-crm__input--total';
     input.dataset.rowId = String(id);
     input.setAttribute('inputmode', 'decimal');
@@ -184,13 +185,14 @@
     return wrap;
   }
 
-  /** Универсальное поле ввода (ФИО или сумма) */
+  /** Универсальное поле ввода (ФИО или сумма).
+   * Для сумм используем type="text", чтобы не было автоочистки браузером.
+   */
   function buildCellInput(row, key, isNumber) {
     var input = document.createElement('input');
-    input.type = isNumber ? 'number' : 'text';
+    input.type = 'text';
     input.className = 'cash-crm__input' + (isNumber ? ' cash-crm__input--num' : '');
     if (isNumber) {
-      input.step = '0.01';
       input.setAttribute('inputmode', 'decimal');
       var n = parseAmount(row[key]);
       input.value = n === 0 ? '' : formatForInput(n);
@@ -470,6 +472,10 @@
   }
 
   function init() {
+    // Берём актуальные DOM-элементы после того, как страница загрузилась
+    bodyEl = document.getElementById('cashBody');
+    totalEl = document.getElementById('cashTotalCell');
+    msgEl = document.getElementById('cashMsg');
     if (!bodyEl) return;
     loadRows();
     var btn = document.getElementById('btnAddRow');
