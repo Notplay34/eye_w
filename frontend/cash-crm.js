@@ -1,5 +1,16 @@
 /**
- * Касса — премиальный финтех UI. Grid-верстка, табличные цифры, без переносов.
+ * Касса павильона 1 — простая и предсказуемая:
+ * - одна строка = один клиент/операция;
+ * - пять колонок сумм (могут быть отрицательными для возвратов/корректировок);
+ * - итог по строке считается автоматически, но при необходимости можно ввести руками;
+ * - общий итог по кассе = сумма всех строк.
+ *
+ * Требования:
+ * - поддержка отрицательных значений (возвраты);
+ * - ввод через запятую и с пробелами;
+ * - никакого «исчезновения» сумм при повторном клике;
+ * - цвета: ноль / плюс / минус;
+ * - работа только через API `/cash/rows`.
  */
 (function () {
   var API = window.API_BASE_URL || '';
@@ -7,43 +18,46 @@
   if (!window.getToken || !window.getToken()) return;
 
   var user = window.getUser();
-  if (user) document.getElementById('userName').textContent = user.name || '';
+  var userNameEl = document.getElementById('userName');
+  if (user && userNameEl) userNameEl.textContent = user.name || '';
 
   var rows = [];
   var msgEl = document.getElementById('cashMsg');
   var totalEl = document.getElementById('cashTotalCell');
   var bodyEl = document.getElementById('cashBody');
 
-  function msg(t, type) {
+  /** Сообщение внизу таблицы */
+  function showMsg(text, type) {
     if (!msgEl) return;
-    msgEl.textContent = t || '';
+    msgEl.textContent = text || '';
     msgEl.className = 'cash-crm__msg' + (type === 'err' ? ' err' : type === 'ok' ? ' ok' : '');
-    if (t && type !== 'err') setTimeout(function () { msg(''); }, 2000);
+    if (text && type !== 'err') {
+      setTimeout(function () {
+        if (msgEl.textContent === text) showMsg('');
+      }, 2000);
+    }
   }
 
-  function numVal(v) {
-    if (v === null || v === undefined || v === '') return 0;
-    var s = String(v).replace(/\s/g, '').replace(',', '.');
+  /** Нормализация числового ввода: поддержка пробелов, запятой и минуса */
+  function parseAmount(raw) {
+    if (raw === null || raw === undefined) return 0;
+    var s = String(raw).trim();
+    if (!s) return 0;
+    s = s.replace(/\s/g, '').replace(',', '.');
     var n = parseFloat(s);
     return isNaN(n) ? 0 : n;
   }
 
-  /** Число для итога по строке (учитывает минус) */
-  function rowTotalNum(r) {
-    var t = r.total;
+  /** Число для поля total в модели (учитывает минус) */
+  function rowTotalNum(row) {
+    if (!row) return 0;
+    var t = row.total;
     if (t === null || t === undefined) return 0;
     var n = Number(t);
     return isNaN(n) ? 0 : n;
   }
 
-  function formatNum(n) {
-    return new Intl.NumberFormat('ru-RU', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(n);
-  }
-
-  /** Только число с пробелами, без " ₽" — для вставки в разметку */
+  /** Для отображения общей суммы (справа в карточке) */
   function formatNumOnly(n) {
     var num = Number(n);
     if (isNaN(num)) num = 0;
@@ -53,43 +67,11 @@
     }).format(num).replace(/\u00a0/g, ' ');
   }
 
-  // Значение для числовых инпутов (input[type=number]) — без локализованных пробелов и запятых,
-  // чтобы браузер не считал его невалидным и не очищал поле при повторном фокусе.
-  function formatNumForInput(v) {
+  /** Значение для input[type=number]: всегда валидный формат, без локализации */
+  function formatForInput(v) {
     var n = Number(v);
     if (!isFinite(n)) return '';
-    // Оставляем 2 знака после точки, точка — валидный разделитель для type=number
     return n.toFixed(2);
-  }
-
-  function patchRow(rowId, payload) {
-    return fetchApi(API + '/cash/rows/' + rowId, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }).then(function (r) {
-      if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
-      return r.json();
-    });
-  }
-
-  function updateRowInList(id, data) {
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].id === id) {
-        rows[i] = data;
-        return;
-      }
-    }
-  }
-
-  function recalcTotal(row) {
-    return (
-      numVal(row.application) +
-      numVal(row.state_duty) +
-      numVal(row.dkp) +
-      numVal(row.insurance) +
-      numVal(row.plates)
-    );
   }
 
   function rowTotalClass(total) {
@@ -98,137 +80,195 @@
     return 'cash-crm__row-total--positive';
   }
 
-  /** Редактируемое поле «Итого» по строке — можно сразу ввести минус */
-  function makeTotalInput(row, initialTotal, rowEl) {
+  function patchRow(id, payload) {
+    return fetchApi(API + '/cash/rows/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.json().then(function (j) {
+          throw new Error(j.detail || r.statusText);
+        });
+      }
+      return r.json();
+    });
+  }
+
+  function replaceRowInMemory(id, updated) {
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].id === id) {
+        rows[i] = updated;
+        return;
+      }
+    }
+  }
+
+  /** Пересчёт total из пяти колонок */
+  function recomputeRowTotalFromFields(row) {
+    if (!row) return 0;
+    var sum =
+      parseAmount(row.application) +
+      parseAmount(row.state_duty) +
+      parseAmount(row.dkp) +
+      parseAmount(row.insurance) +
+      parseAmount(row.plates);
+    row.total = sum;
+    return sum;
+  }
+
+  /** Вводимое поле total по строке (редактируемое, допускает минус) */
+  function buildTotalCell(row) {
     var id = row.id;
-    var total = Number(initialTotal);
-    if (isNaN(total)) total = 0;
+    var total = rowTotalNum(row);
     var wrap = document.createElement('span');
     wrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
 
-    var inp = document.createElement('input');
-    inp.type = 'number';
-    inp.step = '0.01';
-    inp.className = 'cash-crm__input cash-crm__input--num cash-crm__input--total';
-    inp.value = total === 0 ? '' : total;
-    inp.dataset.rowId = String(id);
-    inp.setAttribute('inputmode', 'decimal');
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.step = '0.01';
+    input.className = 'cash-crm__input cash-crm__input--num cash-crm__input--total';
+    input.dataset.rowId = String(id);
+    input.setAttribute('inputmode', 'decimal');
+    input.value = total === 0 ? '' : formatForInput(total);
 
-    inp.addEventListener('input', function () {
-      var v = numVal(this.value);
+    input.addEventListener('input', function () {
+      var v = parseAmount(this.value);
       var r = rows.find(function (x) { return x.id === id; });
       if (r) r.total = v;
       wrap.className = 'cash-crm__row-total ' + rowTotalClass(v);
       renderTotal();
     });
 
-    inp.addEventListener('blur', function () {
-      var v = numVal(this.value);
-      // Для числового инпута используем не локализованный формат, иначе браузер может очистить значение
+    input.addEventListener('blur', function () {
+      var v = parseAmount(this.value);
+      var r = rows.find(function (x) { return x.id === id; });
+      if (!r) return;
+
+      // Пустое поле оставляем пустым, ноль — "0.00", остальное — число
       if (this.value.trim() === '') {
         this.value = '';
       } else {
-        this.value = formatNumForInput(v);
+        this.value = formatForInput(v);
       }
-      var r = rows.find(function (x) { return x.id === id; });
-      if (!r) return;
-      if (r.total === v && !this.dataset.dirty) return;
-      this.dataset.dirty = '';
+
+      if (rowTotalNum(r) === v) {
+        wrap.className = 'cash-crm__row-total ' + rowTotalClass(v);
+        renderTotal();
+        return;
+      }
+
       patchRow(id, { total: v })
         .then(function (updated) {
-          updateRowInList(id, updated);
+          replaceRowInMemory(id, updated);
           var t = rowTotalNum(updated);
-          inp.value = t === 0 ? '' : formatNum(t);
+          input.value = t === 0 ? '' : formatForInput(t);
           wrap.className = 'cash-crm__row-total ' + rowTotalClass(t);
           renderTotal();
-          msg('Сохранено', 'ok');
+          showMsg('Сохранено', 'ok');
         })
         .catch(function (e) {
-          msg('Ошибка: ' + (e.message || ''), 'err');
-          if (r) r.total = rowTotalNum(r);
-          renderTotal();
+          showMsg('Ошибка: ' + (e.message || 'не удалось сохранить'), 'err');
         });
     });
-    inp.addEventListener('focus', function () { this.dataset.dirty = '1'; });
-    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') this.blur(); });
 
-    wrap.appendChild(inp);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') this.blur();
+    });
+
+    wrap.appendChild(input);
     var currency = document.createElement('span');
     currency.className = 'cash-crm__amount-currency';
-    currency.textContent = ' \u20BD';
+    currency.textContent = ' ₽';
     wrap.appendChild(currency);
     return wrap;
   }
 
-  function makeInput(row, key, isNum) {
-    var val = row[key];
+  /** Универсальное поле ввода (ФИО или сумма) */
+  function buildCellInput(row, key, isNumber) {
     var input = document.createElement('input');
-    input.type = isNum ? 'number' : 'text';
-    input.className = 'cash-crm__input' + (isNum ? ' cash-crm__input--num' : '');
-    input.step = '0.01';
-    /* без min — разрешаем отрицательные (возвраты, корректировки) */
-    if (isNum) {
-      var n = numVal(val);
-      input.value = n === 0 ? '' : formatNumForInput(n);
+    input.type = isNumber ? 'number' : 'text';
+    input.className = 'cash-crm__input' + (isNumber ? ' cash-crm__input--num' : '');
+    if (isNumber) {
+      input.step = '0.01';
+      input.setAttribute('inputmode', 'decimal');
+      var n = parseAmount(row[key]);
+      input.value = n === 0 ? '' : formatForInput(n);
     } else {
-      input.value = val || '';
+      input.value = row[key] || '';
     }
     input.dataset.key = key;
     input.dataset.rowId = String(row.id);
-    if (isNum) input.setAttribute('inputmode', 'decimal');
 
-    if (isNum && ['application', 'state_duty', 'dkp', 'insurance', 'plates'].indexOf(key) >= 0) {
+    // Мгновенный пересчёт total при правке сумм
+    if (isNumber && ['application', 'state_duty', 'dkp', 'insurance', 'plates'].indexOf(key) !== -1) {
       input.addEventListener('input', function () {
         var rowEl = this.closest('.cash-crm__grid-row');
-        refreshRowTotalFromInputs(rowEl);
+        refreshRowTotalFromDom(rowEl);
       });
     }
 
     input.addEventListener('blur', function () {
-      var rowEl = this.closest('.cash-crm__grid-row');
       var id = parseInt(this.dataset.rowId, 10);
-      var k = this.dataset.key;
+      if (isNaN(id)) return;
+      var field = this.dataset.key;
+      var currentRow = rows.find(function (r) { return r.id === id; });
+      if (!currentRow) return;
+
       var raw = this.value;
-      var v = isNum ? numVal(raw) : raw.trim();
-      if (isNum && key !== 'client_name') {
-        // Не используем локализованный формат для value числового инпута
-        if (raw.trim() === '' || v === 0) {
-          this.value = raw.trim() === '' ? '' : formatNumForInput(0);
+      var newValue = isNumber ? parseAmount(raw) : raw.trim();
+
+      if (isNumber) {
+        if (raw.trim() === '') {
+          this.value = '';
         } else {
-          this.value = formatNumForInput(v);
+          this.value = formatForInput(newValue);
         }
       }
-      var prev = rows.find(function (r) { return r.id === id; });
-      if (!prev) return;
-      var prevVal = prev[k];
-      if (isNum && prevVal === v && k !== 'client_name') return;
-      if (!isNum && String(prevVal || '') === String(v)) return;
-      refreshRowTotalFromInputs(rowEl);
+
+      var prevVal = currentRow[field];
+      if (!isNumber && String(prevVal || '') === String(newValue || '')) {
+        return;
+      }
+      if (isNumber && Number(prevVal) === newValue) {
+        return;
+      }
 
       var payload = {};
-      payload[k] = isNum ? v : v;
-      if (['application', 'state_duty', 'dkp', 'insurance', 'plates'].indexOf(k) >= 0 && rowEl) {
-        var row = rows.find(function (r) { return r.id === id; });
-        payload.total = row ? row.total : 0;
+      if (isNumber) {
+        currentRow[field] = newValue;
+        // при изменении любой суммы пересчитываем total на фронте и отправляем вместе
+        var sum = recomputeRowTotalFromFields(currentRow);
+        payload[field] = newValue;
+        payload.total = sum;
+      } else {
+        payload[field] = newValue;
       }
+
       patchRow(id, payload)
         .then(function (updated) {
-          updateRowInList(id, updated);
-          var totalWrap = rowEl && rowEl.querySelector('.cash-crm__row-total');
-          var totalInp = totalWrap && totalWrap.querySelector('input.cash-crm__input--total');
-          var total = rowTotalNum(updated);
-          if (totalWrap) totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
-          if (totalInp) totalInp.value = total === 0 ? '' : formatNumForInput(total);
+          replaceRowInMemory(id, updated);
+          // синхронизируем total в DOM
+          var rowEl = bodyEl && bodyEl.querySelector('.cash-crm__grid-row[data-row-id="' + id + '"]');
+          if (rowEl) {
+            var totalWrap = rowEl.querySelector('.cash-crm__row-total');
+            var totalInput = totalWrap && totalWrap.querySelector('input.cash-crm__input--total');
+            var total = rowTotalNum(updated);
+            if (totalWrap) totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(total);
+            if (totalInput) totalInput.value = total === 0 ? '' : formatForInput(total);
+          }
           renderTotal();
-          msg('Сохранено', 'ok');
+          showMsg('Сохранено', 'ok');
         })
         .catch(function (e) {
-          msg('Ошибка: ' + (e.message || 'не удалось сохранить'), 'err');
+          showMsg('Ошибка: ' + (e.message || 'не удалось сохранить'), 'err');
         });
     });
+
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') this.blur();
     });
+
     return input;
   }
 
@@ -237,9 +277,9 @@
     if (!s) return '';
     var d = new Date(s);
     if (isNaN(d.getTime())) return '';
-    var y = d.getFullYear(),
-      m = d.getMonth() + 1,
-      day = d.getDate();
+    var y = d.getFullYear();
+    var m = d.getMonth() + 1;
+    var day = d.getDate();
     return y + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
   }
 
@@ -251,26 +291,25 @@
   }
 
   function renderRow(row, isNew) {
-    var total = rowTotalNum(row);
     var rowEl = document.createElement('div');
     rowEl.className = 'cash-crm__grid-row' + (isNew ? ' cash-crm__grid-row--new' : '');
     rowEl.dataset.rowId = String(row.id);
 
     var cellName = document.createElement('div');
     cellName.className = 'cash-crm__grid-cell cash-crm__grid-cell--name';
-    cellName.appendChild(makeInput(row, 'client_name', false));
+    cellName.appendChild(buildCellInput(row, 'client_name', false));
     rowEl.appendChild(cellName);
 
     ['application', 'state_duty', 'dkp', 'insurance', 'plates'].forEach(function (key) {
       var cell = document.createElement('div');
       cell.className = 'cash-crm__grid-cell cash-crm__grid-cell--num';
-      cell.appendChild(makeInput(row, key, true));
+      cell.appendChild(buildCellInput(row, key, true));
       rowEl.appendChild(cell);
     });
 
     var cellTotal = document.createElement('div');
     cellTotal.className = 'cash-crm__grid-cell cash-crm__grid-cell--num';
-    cellTotal.appendChild(makeTotalInput(row, total, rowEl));
+    cellTotal.appendChild(buildTotalCell(row));
     rowEl.appendChild(cellTotal);
 
     var cellDel = document.createElement('div');
@@ -286,12 +325,15 @@
       fetchApi(API + '/cash/rows/' + row.id, { method: 'DELETE' })
         .then(function (r) {
           if (r.status === 204 || r.ok) {
-            rows = rows.filter(function (r) { return r.id !== row.id; });
+            rows = rows.filter(function (x) { return x.id !== row.id; });
             render();
-          } else return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+            showMsg('Строка удалена', 'ok');
+          } else {
+            return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+          }
         })
         .catch(function (e) {
-          msg('Ошибка: ' + (e.message || 'не удалось удалить'), 'err');
+          showMsg('Ошибка: ' + (e.message || 'не удалось удалить'), 'err');
         });
     };
     cellDel.appendChild(btnDel);
@@ -300,34 +342,43 @@
     return rowEl;
   }
 
+  /** Пересчёт общей суммы в кассе */
   function renderTotal() {
-    var total = rows.reduce(function (sum, r) { return sum + rowTotalNum(r); }, 0);
+    var total = rows.reduce(function (sum, r) {
+      return sum + rowTotalNum(r);
+    }, 0);
     total = Number(total);
-    if (isNaN(total)) total = 0;
+    if (!isFinite(total)) total = 0;
     if (!totalEl) return;
+
     var numSpan = totalEl.querySelector('.cash-crm__amount-num');
     if (numSpan) numSpan.textContent = formatNumOnly(total);
+
     totalEl.classList.remove('cash-crm__total-value--negative', 'cash-crm__total-value--positive');
     if (total < 0) totalEl.classList.add('cash-crm__total-value--negative');
     else if (total > 0) totalEl.classList.add('cash-crm__total-value--positive');
   }
 
-  /** Обновить итог по строке и «Итого в кассе» сразу по текущим значениям пяти полей */
-  function refreshRowTotalFromInputs(rowEl) {
+  /** Пересчёт total по строке на основе текущих значений пяти полей из DOM */
+  function refreshRowTotalFromDom(rowEl) {
     if (!rowEl) return;
     var id = parseInt(rowEl.dataset.rowId, 10);
     if (isNaN(id)) return;
+
     var sum = 0;
     ['application', 'state_duty', 'dkp', 'insurance', 'plates'].forEach(function (key) {
       var inp = rowEl.querySelector('input[data-key="' + key + '"]');
-      if (inp) sum += numVal(inp.value);
+      if (inp) sum += parseAmount(inp.value);
     });
+
     var row = rows.find(function (r) { return r.id === id; });
     if (row) row.total = sum;
+
     var totalWrap = rowEl.querySelector('.cash-crm__row-total');
-    var totalInp = totalWrap && totalWrap.querySelector('input.cash-crm__input--total');
+    var totalInput = totalWrap && totalWrap.querySelector('input.cash-crm__input--total');
     if (totalWrap) totalWrap.className = 'cash-crm__row-total ' + rowTotalClass(sum);
-    if (totalInp) totalInp.value = sum === 0 ? '' : sum;
+    if (totalInput) totalInput.value = sum === 0 ? '' : formatForInput(sum);
+
     renderTotal();
   }
 
@@ -335,10 +386,11 @@
     if (!bodyEl) return;
     bodyEl.innerHTML = '';
 
-    if (rows.length === 0) {
+    if (!rows.length) {
       var placeholderRow = document.createElement('div');
       placeholderRow.className = 'cash-crm__grid-row cash-crm__grid-row--placeholder';
-      placeholderRow.innerHTML = '<div class="cash-crm__grid-cell cash-crm__placeholder">Нет строк. Нажмите «Добавить строку», чтобы начать.</div>';
+      placeholderRow.innerHTML =
+        '<div class="cash-crm__grid-cell cash-crm__placeholder" style="grid-column: 1 / -1;">Нет строк. Нажмите «Добавить строку», чтобы начать.</div>';
       bodyEl.appendChild(placeholderRow);
       renderTotal();
       return;
@@ -356,34 +408,33 @@
       }
       bodyEl.appendChild(renderRow(row, false));
     });
+
     renderTotal();
   }
 
-  function load() {
+  function loadRows() {
     fetchApi(API + '/cash/rows')
       .then(function (r) {
-        if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+        if (!r.ok) {
+          return r.json().then(function (j) {
+            throw new Error(j.detail || r.statusText);
+          });
+        }
         return r.json();
       })
       .then(function (data) {
         rows = Array.isArray(data) ? data : [];
-        if (bodyEl) render();
+        render();
       })
       .catch(function (e) {
         if (bodyEl) {
-          bodyEl.innerHTML = '<div class="cash-crm__grid-row cash-crm__grid-row--placeholder"><div class="cash-crm__grid-cell cash-crm__placeholder">Ошибка загрузки: ' + (e.message || '') + '</div></div>';
+          bodyEl.innerHTML =
+            '<div class="cash-crm__grid-row cash-crm__grid-row--placeholder"><div class="cash-crm__grid-cell cash-crm__placeholder">Ошибка загрузки: ' +
+            (e.message || '') +
+            '</div></div>';
         }
-        msg('Ошибка загрузки', 'err');
+        showMsg('Ошибка загрузки', 'err');
       });
-  }
-
-  function run() {
-    bodyEl = document.getElementById('cashBody');
-    totalEl = document.getElementById('cashTotalCell');
-    msgEl = document.getElementById('cashMsg');
-    if (bodyEl) load();
-    var btn = document.getElementById('btnAddRow');
-    if (btn) btn.onclick = addRow;
   }
 
   function addRow() {
@@ -401,35 +452,33 @@
       }),
     })
       .then(function (r) {
-        if (!r.ok) return r.json().then(function (j) { throw new Error(j.detail || r.statusText); });
+        if (!r.ok) {
+          return r.json().then(function (j) {
+            throw new Error(j.detail || r.statusText);
+          });
+        }
         return r.json();
       })
       .then(function (newRow) {
         rows.unshift(newRow);
-        bodyEl.innerHTML = '';
-        var lastDay = null;
-        rows.forEach(function (row) {
-          var d = dayKey(row);
-          if (d && d !== lastDay) {
-            lastDay = d;
-            var sepRow = document.createElement('div');
-            sepRow.className = 'cash-crm__grid-row-day';
-            sepRow.innerHTML = '<div class="cash-crm__grid-cell">' + dayLabel(d) + '</div>';
-            bodyEl.appendChild(sepRow);
-          }
-          bodyEl.appendChild(renderRow(row, row.id === newRow.id));
-        });
-        renderTotal();
-        msg('Строка добавлена', 'ok');
+        render();
+        showMsg('Строка добавлена', 'ok');
       })
       .catch(function (e) {
-        msg('Ошибка: ' + (e.message || 'не удалось добавить'), 'err');
+        showMsg('Ошибка: ' + (e.message || 'не удалось добавить'), 'err');
       });
   }
 
+  function init() {
+    if (!bodyEl) return;
+    loadRows();
+    var btn = document.getElementById('btnAddRow');
+    if (btn) btn.onclick = addRow;
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', run);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    run();
+    init();
   }
 })();
