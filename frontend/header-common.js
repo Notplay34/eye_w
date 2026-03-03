@@ -50,6 +50,19 @@
     return 'Админ';
   }
 
+  function setMenuState(isOpen) {
+    var dd = document.getElementById('menuDropdown');
+    var btn = document.getElementById('btnMenu');
+    if (!dd) return;
+    dd.classList.toggle('header__dropdown--open', !!isOpen);
+    dd.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  function closeMenu() {
+    setMenuState(false);
+  }
+
   function renderHeader() {
     var userNameEl = document.getElementById('headerUserName');
     if (userNameEl && me) userNameEl.textContent = me.name || me.login || 'Аккаунт';
@@ -100,8 +113,7 @@
           }
           var d = document.getElementById('menuDropdown');
           if (d) {
-            d.classList.remove('header__dropdown--open');
-            d.setAttribute('aria-hidden', 'true');
+            closeMenu();
           }
         });
         inner.appendChild(a);
@@ -113,8 +125,7 @@
     var dd = document.getElementById('menuDropdown');
     if (!dd) return;
     var isOpen = dd.classList.contains('header__dropdown--open');
-    dd.classList.toggle('header__dropdown--open', !isOpen);
-    dd.setAttribute('aria-hidden', isOpen ? 'true' : 'false');
+    setMenuState(!isOpen);
   }
 
   function init() {
@@ -139,7 +150,7 @@
       }
 
       var btnMenu = document.getElementById('btnMenu');
-      if (btnMenu) btnMenu.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(); });
+      if (btnMenu) { btnMenu.setAttribute('aria-expanded', 'false'); btnMenu.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(); }); }
       var userNameEl = document.getElementById('headerUserName');
       if (userNameEl) userNameEl.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(); });
       var logoutLink = document.getElementById('headerLogoutLink');
@@ -154,10 +165,12 @@
         if (!e.target.closest('.header__menu-wrap')) {
           var dd = document.getElementById('menuDropdown');
           if (dd) {
-            dd.classList.remove('header__dropdown--open');
-            dd.setAttribute('aria-hidden', 'true');
+            closeMenu();
           }
         }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeMenu();
       });
     }
 
