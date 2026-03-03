@@ -115,6 +115,26 @@ body {
   padding: var(--space-6);
 }
 
+
+/* Страницы, где dashboard-header расположен напрямую в body,
+   визуально выравниваем его в тот же контейнер, что и основной контент. */
+body > .header.header--dashboard {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-6) 0;
+  width: 100%;
+}
+
+
+body > .header.header--dashboard + .plate-page,
+body > .header.header--dashboard + .plate-cash-page,
+body > .header.header--dashboard + .cash-page,
+body > .header.header--dashboard + .warehouse-page,
+body > .header.header--dashboard + .admin,
+body > .header.header--dashboard + .users {
+  padding-top: 0;
+}
+
 /* Аналитика */
 .analytics-section {
   margin-bottom: var(--space-6);
