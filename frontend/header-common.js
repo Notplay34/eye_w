@@ -116,12 +116,25 @@
   }
 
   function init() {
-    var headerTitle = document.querySelector('.header__title');
-    if (headerTitle) headerTitle.textContent = 'РегДок';
-
     function proceed() {
       if (!me) me = buildMeFromUser();
       renderHeader();
+
+      // Клик по «РегДок» ведёт на стартовую страницу роли
+      var headerTitle = document.querySelector('.header__title');
+      if (headerTitle) {
+        headerTitle.textContent = 'РегДок';
+        headerTitle.style.cursor = 'pointer';
+        headerTitle.onclick = function () {
+          var user = window.getUser && window.getUser();
+          var role = user && user.role;
+          if (role === 'ROLE_PLATE_OPERATOR') {
+            window.location.href = 'plate-operator.html';
+          } else {
+            window.location.href = 'index.html';
+          }
+        };
+      }
 
       var btnMenu = document.getElementById('btnMenu');
       if (btnMenu) btnMenu.addEventListener('click', function (e) { e.stopPropagation(); toggleMenu(); });

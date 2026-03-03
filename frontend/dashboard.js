@@ -60,6 +60,21 @@
   function initDashboard() {
     if (!me) me = buildMeFromUser();
     renderHeader();
+
+    // Клик по «РегДок» ведёт на стартовую страницу по роли
+    var headerTitle = document.querySelector('.header__title');
+    if (headerTitle) {
+      headerTitle.style.cursor = 'pointer';
+      headerTitle.onclick = function () {
+        var user = window.getUser && window.getUser();
+        var role = user && user.role;
+        if (role === 'ROLE_PLATE_OPERATOR') {
+          window.location.href = 'plate-operator.html';
+        } else {
+          window.location.href = 'index.html';
+        }
+      };
+    }
     setPavilionVisibility();
     switchContent(window.getCurrentPavilion());
     var btnQuick = document.getElementById('btnQuickCreate');
@@ -93,29 +108,7 @@
     var userNameEl = document.getElementById('headerUserName');
     if (userNameEl) userNameEl.textContent = me.name || me.login || 'Аккаунт';
 
-    var allowed = me.allowed_pavilions || [1];
-    var pavLabel = document.getElementById('pavilionLabel');
-    var pavSelect = document.getElementById('pavilionSelect');
-    if (allowed.length > 1) {
-      pavLabel.style.display = 'none';
-      pavSelect.style.display = 'inline-block';
-      pavSelect.innerHTML = '';
-      if (allowed.indexOf(1) >= 0) {
-        var o1 = document.createElement('option');
-        o1.value = '1';
-        o1.textContent = 'Павильон 1 — Документы';
-        pavSelect.appendChild(o1);
-      }
-      if (allowed.indexOf(2) >= 0) {
-        var o2 = document.createElement('option');
-        o2.value = '2';
-        o2.textContent = 'Павильон 2 — Номера';
-        pavSelect.appendChild(o2);
-      }
-      pavSelect.value = String(window.getCurrentPavilion());
-    } else {
-      pavLabel.textContent = allowed[0] === 2 ? 'Павильон 2 — Номера' : 'Павильон 1 — Документы';
-    }
+    // Текущий павильон теперь выбирается только через меню (три точки).
 
     var canForm = (me.role === 'ROLE_OPERATOR' || me.role === 'ROLE_MANAGER' || me.role === 'ROLE_ADMIN');
     var btnQuick = document.getElementById('btnQuickCreate');
