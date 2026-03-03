@@ -1,7 +1,9 @@
 """Веб-авторизация: логин по login+пароль, JWT, проверка ролей."""
-from typing import List, Optional
+from collections import defaultdict, deque
+from time import monotonic
+from typing import Deque, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from sqlalchemy import select, func
@@ -10,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.logging_config import get_logger
 from app.core.permissions import allowed_pavilions, get_menu_items
+from app.config import settings
 from app.models import Employee
 from app.models.employee import EmployeeRole
 from app.services.auth_service import (
@@ -21,6 +24,28 @@ from app.services.auth_service import (
 router = APIRouter(prefix="/auth", tags=["auth"])
 security = HTTPBearer(auto_error=False)
 logger = get_logger(__name__)
+
+
+_failed_logins: Dict[str, Deque[float]] = defaultdict(deque)
+
+
+def _is_rate_limited(key: str) -> bool:
+    now = monotonic()
+    window = settings.login_rate_limit_window_seconds
+    max_attempts = settings.login_rate_limit_attempts
+    attempts = _failed_logins[key]
+    while attempts and (now - attempts[0]) > window:
+        attempts.popleft()
+    return len(attempts) >= max_attempts
+
+
+def _register_failed_login(key: str) -> None:
+    _failed_logins[key].append(monotonic())
+
+
+def _clear_failed_logins(key: str) -> None:
+    if key in _failed_logins:
+        _failed_logins.pop(key, None)
 
 
 class UserInfo(BaseModel):
@@ -92,11 +117,20 @@ RequireAdmin = require_roles([EmployeeRole.ROLE_ADMIN])
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
+    request: Request,
     form: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
     username = (form.username or "").strip().lower()
+    client_ip = request.client.host if request.client else "unknown"
+    limiter_key = f"{client_ip}:{username or '_empty'}"
+    if _is_rate_limited(limiter_key):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Слишком много попыток входа. Повторите позже.",
+        )
     if not username:
+        _register_failed_login(limiter_key)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
     result = await db.execute(
         select(Employee).where(
@@ -106,15 +140,18 @@ async def login(
     )
     emp = result.scalar_one_or_none()
     if not emp or not emp.password_hash:
+        _register_failed_login(limiter_key)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный логин или пароль",
         )
     if not verify_password(form.password, emp.password_hash):
+        _register_failed_login(limiter_key)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный логин или пароль",
         )
+    _clear_failed_logins(limiter_key)
     token = create_access_token(
         subject=emp.id,
         role=emp.role.value,

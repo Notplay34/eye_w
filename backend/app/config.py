@@ -2,20 +2,26 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    app_env: str = "development"
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/eye_w"
-    jwt_secret: str = "change-me-in-production"
+    jwt_secret: str = ""
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 7  # 7 дней
 
     # Суперпользователь создаётся при первом запуске, если такого логина ещё нет.
-    # Задайте в .env свои значения и смените пароль после первого входа.
-    superuser_login: str = "sergey151"
-    superuser_password: str = "1wq21wq2"
-    superuser_name: str = "Сергей"
+    # По умолчанию отключено: задайте значения в .env при необходимости bootstrap.
+    superuser_login: str = ""
+    superuser_password: str = ""
+    superuser_name: str = ""
 
-    # CORS: через переменную CORS_ORIGINS (через запятую, например https://eye34z.duckdns.org,http://localhost:3000).
-    # Не задано или пусто — разрешаются все origins (для разработки).
+    # CORS: через переменную CORS_ORIGINS (через запятую).
+    # Wildcard разрешается только если ALLOW_WILDCARD_CORS=true.
     cors_origins: str = ""
+    allow_wildcard_cors: bool = False
+
+    # Базовая защита от brute-force для /auth/login.
+    login_rate_limit_attempts: int = 5
+    login_rate_limit_window_seconds: int = 300
 
     class Config:
         env_file = ".env"

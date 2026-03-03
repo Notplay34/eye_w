@@ -26,6 +26,17 @@ setup_logging()
 logger = get_logger(__name__)
 
 
+def validate_security_settings() -> None:
+    """Fail-fast для небезопасной конфигурации в production."""
+    env = (settings.app_env or "development").strip().lower()
+    is_production = env in {"prod", "production"}
+    secret = (settings.jwt_secret or "").strip()
+    if not secret or secret == "change-me-in-production":
+        if is_production:
+            raise RuntimeError("JWT_SECRET must be set in production")
+        logger.warning("JWT_SECRET не задан: используется небезопасная dev-конфигурация")
+
+
 async def ensure_columns_and_enum():
     """Добавить колонки login, password_hash и ROLE_MANAGER в enum для старых БД."""
     async with engine.begin() as conn:
@@ -173,6 +184,9 @@ async def ensure_superuser():
     login = (settings.superuser_login or "").strip()
     if not login:
         return
+    if not (settings.superuser_password or "").strip():
+        logger.warning("SUPERUSER_LOGIN задан, но SUPERUSER_PASSWORD пустой — пропускаем bootstrap")
+        return
     async with async_session_maker() as session:
         r = await session.execute(select(Employee).where(Employee.login == login))
         if r.scalar_one_or_none() is not None:
@@ -230,6 +244,7 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
+validate_security_settings()
 app = FastAPI(title="Павильоны МРЭО", version="1.0.0", lifespan=lifespan)
 
 
@@ -251,7 +266,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 _cors_origins = [o.strip() for o in (settings.cors_origins or "").split(",") if o.strip()]
 if not _cors_origins:
-    _cors_origins = ["*"]
+    _cors_origins = ["*"] if settings.allow_wildcard_cors else []
+if not _cors_origins:
+    logger.warning("CORS_ORIGINS пустой и wildcard отключён: кросс-доменные запросы будут запрещены")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
