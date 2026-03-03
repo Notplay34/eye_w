@@ -174,7 +174,10 @@
 
   function setPavilionVisibility() {
     var allowed = me.allowed_pavilions || [1];
-    document.getElementById('pavilionWrap').style.display = allowed.length ? 'block' : 'none';
+    var wrap = document.getElementById('pavilionWrap');
+    if (wrap) {
+      wrap.style.display = allowed.length ? 'block' : 'none';
+    }
   }
 
   function toggleMenu() {
