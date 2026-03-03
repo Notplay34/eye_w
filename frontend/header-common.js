@@ -1,5 +1,7 @@
 (function () {
-  if (!window.requireAuth || !window.requireAuth()) return;
+  // На всех внутренних страницах уже есть редирект по токену в HTML,
+  // поэтому здесь не блокируем работу хедера даже если requireAuth отсутствует
+  // или ведёт себя нестандартно.
 
   var API = window.API_BASE_URL || '';
   var fetchApi = window.fetchWithAuth || fetch;
